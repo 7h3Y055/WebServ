@@ -1,2 +1,4 @@
-# WebServ
-web server using c++98
+# NOTES:
+1)
+2)
+3)
