@@ -1,0 +1,6 @@
+GET      / HTTP/1.1
+Host: www.google.com:80
+Cache-Control: max-age=0
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Linux"
+

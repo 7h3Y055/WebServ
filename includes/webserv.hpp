@@ -1,7 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <exception>
 #include <string>
+#include <sstream>
 #include <unistd.h>      // execve, dup, dup2, pipe, fork, chdir, access, read, write, close
 #include <cstring>      // strerror, gai_strerror
 #include <cerrno>       // errno
@@ -11,7 +13,7 @@
 #include <netdb.h>      // getaddrinfo, freeaddrinfo, getprotobyname
 #include <sys/select.h> // select
 #include <poll.h>       // poll
-#include <sys/epoll.h>  // epoll_create, epoll_ctl, epoll_wait
+// #include <sys/epoll.h>  // epoll_create, epoll_ctl, epoll_wait
 #include <signal.h>     // signal, kill
 #include <sys/wait.h>   // waitpid
 #include <fcntl.h>      // fcntl

@@ -7,12 +7,13 @@ class Request
     private:
         bool _is_request_complete;
         bool _is_request_CGI;
+        bool _already_filled;
 
         std::string _Buffer;
         std::string _Method;
         std::string _File_name;
         std::string _URI;
-        std::string _Host;
+        std::string _Version;
         std::map<std::string, std::string> _Headers;
         std::string _Body;
     public:
@@ -23,13 +24,12 @@ class Request
         bool is_request_complete();
         bool is_request_CGI();
         std::string get_method();
+        std::string get_version();
         std::string get_file_name();
         std::string get_URI();
-        std::string get_host();
         std::map<std::string, std::string> get_headers();
         std::string get_header(std::string key);
         std::string get_body();
-
 
 
         Request();

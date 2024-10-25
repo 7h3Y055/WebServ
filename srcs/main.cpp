@@ -2,19 +2,33 @@
 
 int main(int ac, char **av)
 {
-    std::string req1 = "GET / HTT";
-    std::string req2 = "P/1.1\r\nHost: www.w3.o";
-    std::string req3 = "rg\r\nUser-Agent: Mozilla/5.0\r\nAccept: text/html\r\nAccept-Langua";
-    std::string req4 = "ge: en-us\r\nAccept-Encoding: gzip, deflate\r\nConnection: Keep-Alive\r\n\r\n";
+    try{
+        
+        std::string request;
+        Request req;
+        while (std::getline(std::cin, request))
+        {
+            request += "\r\n";
 
-    Request req;
 
-    req.fill_request(req1);
-    req.fill_request(req2);
-    req.fill_request(req3);
-    req.fill_request(req4);
-    
-    
+            req.fill_request(request);
+            if (req.is_request_complete())
+                break;
+        }
 
+        std::cout << "Method: " << req.get_method() << std::endl;
+        std::cout << "URI: " << req.get_URI() << std::endl;
+        std::cout << "Version: " << req.get_version() << std::endl;
+        std::cout << "File name: " << req.get_file_name() << std::endl;
+        std::cout << "Headers: {" << std::endl;
+        std::map<std::string, std::string> headers = req.get_headers();
+        for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++){
+            std::cout << "'" << it->first << "': '" << it->second << "'\n";
+        }
+        std::cout << "}\nBody: {\n" << req.get_body() << "}" << std::endl;
+    }
+    catch (std::exception &e){
+        std::cerr << e.what() << std::endl;
+    }
 
 }
