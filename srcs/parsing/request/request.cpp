@@ -34,9 +34,9 @@ std::pair<std::string, std::string> fill_header(std::string header){
     pair.first = header.substr(0, header.find(':'));
     pair.second = header.substr(header.find(':') + 1, std::string::npos);
     pair.second = pair.second.substr(0, pair.second.find('\r'));
-    // if (std::isspace(pair.first[0])){
-    //     throw std::runtime_error("Bad Request4");
-    // }
+    if (std::isspace(pair.first[0])){
+        throw std::runtime_error("Bad Request4");
+    }
     return pair;
 }
 
@@ -44,64 +44,96 @@ std::pair<std::string, std::string> fill_header(std::string header){
 void    Request::fill_request(std::string request){
     _Buffer += request;
 
-    if (_Buffer.find("\r\n\r\n") == std::string::npos){
+    if (_Buffer.find("\r\n") == std::string::npos)
         return ;
-    }
-    if (_is_request_complete){
-        _Body += request;
-        return ;
-    }
 
 
-    std::stringstream ss(_Buffer);
-    std::string line1;
-    std::string line2;
+
+
+    std::string line;
+    while (_Buffer.find("\r\n") != std::string::npos)
+    {
+        line = _Buffer.substr(0, _Buffer.find("\r\n"));
+        _Buffer = _Buffer.substr(_Buffer.find("\r\n") + 2, std::string::npos);
+        if (line.empty() && _request_state == HTTP_REQUEST_LINE)
+            return ;
+        if (_request_state == HTTP_REQUEST_LINE)
+        {
+            std::vector<std::string> strs = split_string_with_multiple_delemetres(line, " \t\r\n");
+            if (strs.size() == 3){
+                _Method = strs[0];
+                _URI = strs[1];
+                _Version = strs[2];
+                _File_name = _URI.substr(0, _URI.find('?'));
+            }
+            else{
+                std::cout << strs.size() << std::endl;
+                throw std::runtime_error("Invalid request1");
+            }
+            _request_state = HTTP_HEADER;
+        }
+        else if (_request_state == HTTP_HEADER)
+        {
+            if (line.empty()){
+                _request_state = HTTP_BODY;
+                continue ;
+            }
+            std::pair<std::string, std::string> header = fill_header(line);
+            _Headers[header.first] = header.second;
+        }
+        else if (_request_state == HTTP_BODY)
+        {
+            _Body += line += "\r\n";
+        }
+    }
     
 
-    // First line
-    while (std::getline(ss, line1)){
-        if (line1 == "\r"){
-            continue;
-        }
-        std::vector<std::string> strs = split_string_with_multiple_delemetres(line1, " \t");
-        if (strs.size() == 3){
-            _Method = strs[0];
-            _URI = strs[1];
-            _Version = strs[2];
-            _File_name = _URI.substr(0, _URI.find('?'));
-            break;
-        }
-        else{
-            throw std::runtime_error("Invalid request1");
-        }
-    }
+    // // First line
+    // while (std::getline(ss, line1)){
+    //     if (line1 == "\r"){
+    //         continue;
+    //     }
+    //     std::vector<std::string> strs = split_string_with_multiple_delemetres(line1, " \t\r");
+    //     if (strs.size() == 3){
+    //         _Method = strs[0];
+    //         _URI = strs[1];
+    //         _Version = strs[2];
+    //         _File_name = _URI.substr(0, _URI.find('?'));
+    //         break;
+    //     }
+    //     else{
+    //         throw std::runtime_error("Invalid request1");
+    //     }
+    // }
 
 
-    // Headers
-    std::pair<std::string, std::string>  header;
-    while (std::getline(ss, line1))
-    {
-        header = fill_header(line1);
-        _Headers[header.first] = header.second;
-        std::getline(ss, line2);
-        if (line1[line1.size() - 1] == '\r' && line2[0] == '\r')
-            break;
-        header = fill_header(line2);
-        _Headers[header.first] = header.second;
-    }
+    // // Headers
+    // std::pair<std::string, std::string>  header;
+    // while (std::getline(ss, line1))
+    // {
+    //     if (line1 != "\r")
+    //         header = fill_header(line1);
+    //     _Headers[header.first] = header.second;
+    //     std::getline(ss, line2);
+    //     if (line1[line1.size() - 1] == '\r' && line2[0] == '\r')
+    //         break;
+    //     if (line2 != "\r")
+    //         header = fill_header(line2);
+    //     _Headers[header.first] = header.second;
+    //     _is_headers_complete = true;
+    // }
     
-    // Body
-    while (std::getline(ss, line1))
-    {
-        _Body += line1;
-        _Body += '\n';
-    }
+    // // Body
+    // while (std::getline(ss, line1))
+    // {
+    //     _Body += line1;
+    //     _Body += '\n';
+    // }
 
-    _is_request_complete = true;
 }
 
-bool Request::is_request_complete(){
-    return this->_is_request_complete;
+int Request::request_state(){
+    return this->_request_state;
 }
 
 bool Request::is_request_CGI(){
@@ -144,7 +176,7 @@ std::string Request::get_body(){
 
 
 
-Request::Request(): _is_request_complete(false), _is_request_CGI(false), _already_filled(false){
+Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _already_filled(false){
 }
 
 Request::~Request(){

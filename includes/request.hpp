@@ -1,11 +1,16 @@
 #pragma one
 
-
+enum RequestState
+{
+    HTTP_REQUEST_LINE,
+    HTTP_HEADER,
+    HTTP_BODY
+};
 
 class Request
 {
     private:
-        bool _is_request_complete;
+        int _request_state;
         bool _is_request_CGI;
         bool _already_filled;
 
@@ -21,7 +26,7 @@ class Request
 
         void fill_request(std::string request);
 
-        bool is_request_complete();
+        int request_state();
         bool is_request_CGI();
         std::string get_method();
         std::string get_version();

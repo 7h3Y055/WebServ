@@ -18,6 +18,8 @@ $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(INC) $(OBJ) -o $(NAME)
 	@rm -rf $(OBJ)
 	@echo -e "\033[0;32mDone    \033[0m"
+	@clear
+	@./$(NAME) | cat -e | less
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
@@ -32,3 +34,5 @@ fclean:
 	@echo -e "\033[0;31mFcleaned \033[0m"
 
 re: fclean all clean
+
+.PHONY: all clean fclean re
