@@ -20,35 +20,31 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
 
 std::pair<std::string, std::string> fill_header(std::string header){
     std::pair<std::string, std::string> pair;
-
     std::vector<std::string> strs = split_string_with_multiple_delemetres(header, ": \t\r");
-    if (header.find(':') == std::string::npos && strs.size() > 1){
+    if (header.find(':') == std::string::npos && strs.size() > 1)
         throw std::runtime_error("Bad Request2");
-    }
-
-    if (std::isspace(header[header.find(':') - 1])){
+    if (std::isspace(header[header.find(':') - 1]))
         throw std::runtime_error("Bad Request3");
-    }
-
-
     pair.first = header.substr(0, header.find(':'));
     pair.second = header.substr(header.find(':') + 1, std::string::npos);
     pair.second = pair.second.substr(0, pair.second.find('\r'));
     if (std::isspace(pair.first[0])){
+        std::cout << header << std::endl;
         throw std::runtime_error("Bad Request4");
     }
     return pair;
 }
 
 
+std::string &check_allowed_methods(std::string &method){
+    return method;//HERE
+}
+
 void    Request::fill_request(std::string request){
     _Buffer += request;
 
     if (_Buffer.find("\r\n") == std::string::npos)
         return ;
-
-
-
 
     std::string line;
     while (_Buffer.find("\r\n") != std::string::npos)
@@ -61,76 +57,42 @@ void    Request::fill_request(std::string request){
         {
             std::vector<std::string> strs = split_string_with_multiple_delemetres(line, " \t\r\n");
             if (strs.size() == 3){
-                _Method = strs[0];
-                _URI = strs[1];
-                _Version = strs[2];
+                _Method = check_allowed_methods(strs[0]);
+                _URI = (strs[1][0] == '/' ? strs[1] : throw std::runtime_error("Invalid request"));
+                _Version = (strs[2] == "HTTP/1.1" ? strs[2] : throw std::runtime_error("Invalid request"));
                 _File_name = _URI.substr(0, _URI.find('?'));
             }
             else{
                 std::cout << strs.size() << std::endl;
-                throw std::runtime_error("Invalid request1");
+                throw std::runtime_error("Invalid request9");
             }
             _request_state = HTTP_HEADER;
         }
         else if (_request_state == HTTP_HEADER)
         {
-            if (line.empty()){
+            if (line.empty() || line == "\r"){
+                if (_Host_found != 1){
+                    throw std::runtime_error("Bad Request7");
+                }
                 _request_state = HTTP_BODY;
                 continue ;
             }
             std::pair<std::string, std::string> header = fill_header(line);
             _Headers[header.first] = header.second;
+            if (header.first == "Host"){
+                _Host_found++;
+                if (header.second.find_first_not_of("\r\n\v\t ") == std::string::npos)
+                    throw std::runtime_error("Bad Request5");
+            }
         }
         else if (_request_state == HTTP_BODY)
         {
             _Body += line += "\r\n";
         }
     }
-    
-
-    // // First line
-    // while (std::getline(ss, line1)){
-    //     if (line1 == "\r"){
-    //         continue;
-    //     }
-    //     std::vector<std::string> strs = split_string_with_multiple_delemetres(line1, " \t\r");
-    //     if (strs.size() == 3){
-    //         _Method = strs[0];
-    //         _URI = strs[1];
-    //         _Version = strs[2];
-    //         _File_name = _URI.substr(0, _URI.find('?'));
-    //         break;
-    //     }
-    //     else{
-    //         throw std::runtime_error("Invalid request1");
-    //     }
-    // }
-
-
-    // // Headers
-    // std::pair<std::string, std::string>  header;
-    // while (std::getline(ss, line1))
-    // {
-    //     if (line1 != "\r")
-    //         header = fill_header(line1);
-    //     _Headers[header.first] = header.second;
-    //     std::getline(ss, line2);
-    //     if (line1[line1.size() - 1] == '\r' && line2[0] == '\r')
-    //         break;
-    //     if (line2 != "\r")
-    //         header = fill_header(line2);
-    //     _Headers[header.first] = header.second;
-    //     _is_headers_complete = true;
-    // }
-    
-    // // Body
-    // while (std::getline(ss, line1))
-    // {
-    //     _Body += line1;
-    //     _Body += '\n';
-    // }
-
 }
+
+
 
 int Request::request_state(){
     return this->_request_state;
@@ -146,6 +108,10 @@ std::string Request::get_method(){
 
 std::string Request::get_version(){
     return this->_Version;
+}
+
+std::string Request::get_Host(){
+    return this->_Headers["Host"];
 }
 
 std::string Request::get_file_name(){
@@ -176,7 +142,7 @@ std::string Request::get_body(){
 
 
 
-Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _already_filled(false){
+Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _Host_found(false){
 }
 
 Request::~Request(){
