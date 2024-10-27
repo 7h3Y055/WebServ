@@ -26,6 +26,8 @@
 #include <vector>
 #include <deque>
 #include <list>
+// include epoll.h
+#include <sys/epoll.h>
 
 
 #include "request.hpp"

@@ -1,8 +1,7 @@
 #include "webserv.hpp"
 
-
-
-std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters){
+std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters)
+{
     std::vector<std::string> strs;
     size_t start_pos = 0;
     size_t end_pos = 0;
