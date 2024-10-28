@@ -17,6 +17,10 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
     return strs;
 }
 
+void remove_white_spaces_edges(std::string &str){
+    str = str.substr(str.find_first_not_of(" \t\r\n\v"), std::string::npos);
+    str = str.substr(0, str.find_last_not_of(" \t\r\n\v") + 1);
+}
 
 std::pair<std::string, std::string> fill_header(std::string header){
     std::pair<std::string, std::string> pair;
@@ -28,6 +32,7 @@ std::pair<std::string, std::string> fill_header(std::string header){
     pair.first = header.substr(0, header.find(':'));
     pair.second = header.substr(header.find(':') + 1, std::string::npos);
     pair.second = pair.second.substr(0, pair.second.find('\r'));
+    remove_white_spaces_edges(pair.second);
     if (std::isspace(pair.first[0])){
         std::cout << header << std::endl;
         throw std::runtime_error("Bad Request4");
@@ -38,6 +43,22 @@ std::pair<std::string, std::string> fill_header(std::string header){
 
 std::string &check_allowed_methods(std::string &method){
     return method;//HERE
+}
+
+long long string2ll(std::string str){
+    long long length;
+
+    try{
+        for (size_t i = 0; i < str.size(); i++){
+            if (!std::isdigit(str[i]))
+                throw std::runtime_error("Bad Request19");
+        }
+        length = std::stoll(str);
+    }
+    catch (std::exception &e){
+        throw std::runtime_error("Bad Request20");
+    }
+    return length;
 }
 
 void    Request::fill_request(std::string request){
@@ -74,6 +95,23 @@ void    Request::fill_request(std::string request){
                 if (_Host_found != 1){
                     throw std::runtime_error("Bad Request7");
                 }
+
+
+                if (_Method == "POST"){
+                    if ((_Headers.find("Content-Length") != _Headers.end()) && (_Headers.find("Transfer-Encoding") != _Headers.end()))
+                        throw std::runtime_error("Bad Request15");
+                    if (_Headers.find("Content-Length") != _Headers.end() && !_Headers["Content-Length"].empty()){
+                        _Transfer_Mechanism = "Fixed";
+                        _Fixed_length = string2ll(_Headers["Content-Length"]);
+                    }
+                    else if (_Headers.find("Transfer-Encoding") != _Headers.end() && _Headers["Transfer-Encoding"] == "chunked")
+                        _Transfer_Mechanism = "Chunked";
+                    else
+                        throw std::runtime_error("Bad Request16");
+                }
+
+
+
                 _request_state = HTTP_BODY;
                 continue ;
             }
@@ -87,7 +125,22 @@ void    Request::fill_request(std::string request){
         }
         else if (_request_state == HTTP_BODY)
         {
-            _Body += line += "\r\n";
+            if (_Transfer_Mechanism == "Fixed"){
+                _Body += line += "\r\n";
+            }
+            else if (_Transfer_Mechanism == "Chunked"){
+                _Body += line += "\r\n";
+            }
+
+
+
+
+            // Content-Length > Fixed_length = 400
+            // Content-Length < Fixed_length = ignore the rest
+
+            // Transfer-Encoding: chunked > actual size = 400
+            // Transfer-Encoding: chunked < actual size = ignore the rest
+            
         }
     }
 }
@@ -112,6 +165,14 @@ std::string Request::get_version(){
 
 std::string Request::get_Host(){
     return this->_Headers["Host"];
+}
+
+std::string Request::get_transfer_mechanism(){
+    return this->_Transfer_Mechanism;
+}
+
+long long Request::get_fixed_length(){
+    return this->_Fixed_length;
 }
 
 std::string Request::get_file_name(){

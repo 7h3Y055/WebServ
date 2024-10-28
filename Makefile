@@ -19,7 +19,8 @@ $(NAME): $(OBJ)
 	@rm -rf $(OBJ)
 	@echo -e "\033[0;32mDone    \033[0m"
 	@clear
-	@nc -l 80 | ./$(NAME)
+	@./$(NAME) |  less
+	# @nc -l 80 | ./$(NAME)
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@

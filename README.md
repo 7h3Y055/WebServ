@@ -10,7 +10,7 @@
 
 # HTTP Message Body Transfer Mechanisms
 
-There are two main mechanisms for transferring HTTP message bodies:
+There are tree main mechanisms for transferring HTTP message bodies:
 
 ## 1. Fixed-length Transfer
 
@@ -36,3 +36,5 @@ Hello
  World
 0
 ```
+## 3. Multiparts(boundaries)
+But not is mandatory
