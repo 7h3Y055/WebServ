@@ -7,26 +7,32 @@
 
 
 
-# HTTP message body transfer mechanisms
-- There a two main mechanisms
-1) Fixed-length
-2) Chunked
 
+# HTTP Message Body Transfer Mechanisms
 
-# Example for "Chunked transfer"
+There are two main mechanisms for transferring HTTP message bodies:
 
+## 1. Fixed-length Transfer
+
+Uses `Content-Length` header to specify exact message size.
+
+### Example
+```http
 HTTP/1.1 200 OK
-Transfer-Encoding: chunked
+Content-Length: 11
+Hello World
+```
 
+
+
+## 2. Chunked Transfer
+Uses "Transfer-Encoding: chunked" to send data in chunks (the length in hex).
+### Example
+```HTTP/1.1 200 OK
+Transfer-Encoding: chunked
 5
 Hello
 7
  World
 0
-
-# Example for "Simple transfer"
-
-HTTP/1.1 200 OK
-Content-Length: 11
-
-Hello World
+```
