@@ -15,18 +15,18 @@
 
 # Example for "Chunked transfer"
 
-HTTP/1.1 200 OK
+"HTTP/1.1 200 OK
 Transfer-Encoding: chunked
 
 5
 Hello
 7
  World
-0
+0"
 
 # Example for "Simple transfer"
 
-HTTP/1.1 200 OK
+"HTTP/1.1 200 OK
 Content-Length: 11
 
-Hello World
+Hello World"
