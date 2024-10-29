@@ -1,5 +1,38 @@
-#include "webserv.hpp"
+// #include "webserv.hpp"
+#include "config.hpp"
 
+int main(int c, char **args)
+{
+   vector<ServerConfig> servers;
+    if (c != 2)
+        return (std::cerr << "Usage: " << args[0] << " <config_file>" <<endl, 1);
+    config_parse(args[1], servers);
+    for (int i = 0; i < servers.size(); i++)
+    {
+        cout << "Server " << i << " config: {" << endl;
+        cout << "host \t\t\t:" << servers.at(i).get_config_value("host") << endl;
+        cout << "server_name \t\t:" << servers.at(i).get_config_value("server_name") << endl;
+        cout << "root \t\t\t:" << servers.at(i).get_config_value("root") << endl;
+        cout << "error_404 \t\t:" << servers.at(i).get_config_value("error_404") << endl;
+        cout << "client_max_body_size \t:" << servers.at(i).get_config_value("client_max_body_size") << endl << endl;
+        cout << "number_of_locations : " << servers.at(i).get_location_count() << endl;
+        // for (int j = 0; j < servers.at(i).get_location_count(); j++)
+        // {
+        //     cout << "location: " << i << endl; 
+        //     map<string, string> copy_location = servers.at(i).get_copy_location(i);
+        //     map<string, string>::iterator start_it = copy_location.begin();
+        //     map<string, string>::iterator end_it = copy_location.end();
+        //     while (start_it != end_it)
+        //     {
+        //         cout << start_it->first << " : " << start_it->second << endl;
+        //         start_it++;
+        //     }
+
+        // }
+    }
+}
+
+/*
 std::vector<int> _Create_servers(int nos, int *ports)
 {
     std::vector<int> fds;
@@ -99,3 +132,4 @@ int main(int ac, char **av)
 
 }
 
+*/
