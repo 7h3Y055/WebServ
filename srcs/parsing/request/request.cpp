@@ -63,15 +63,17 @@ long long string2ll(std::string str){
 
 void    Request::fill_request(std::string request){
     _Buffer += request;
-
-    if (_Buffer.find("\r\n") == std::string::npos)
-        return ;
-
     std::string line;
-    while (_Buffer.find("\r\n") != std::string::npos)
+    bool chunked_state = false;
+    bool have_new_line;
+    while (_Buffer.size() > 0 && (_Buffer.find("\r\n") != std::string::npos))
     {
+        if (_Buffer.find("\r\n") != std::string::npos)
+            have_new_line = true;
+        else
+            have_new_line = false;
         line = _Buffer.substr(0, _Buffer.find("\r\n"));
-        _Buffer = _Buffer.substr(_Buffer.find("\r\n") + 2, std::string::npos);
+        _Buffer = (_Buffer.find("\r\n") == std::string::npos) ? "" : _Buffer.substr(_Buffer.find("\r\n") + 2, std::string::npos);
         if (line.empty() && _request_state == HTTP_REQUEST_LINE)
             return ;
         if (_request_state == HTTP_REQUEST_LINE)
@@ -84,7 +86,6 @@ void    Request::fill_request(std::string request){
                 _File_name = _URI.substr(0, _URI.find('?'));
             }
             else{
-                std::cout << strs.size() << std::endl;
                 throw std::runtime_error("Invalid request9");
             }
             _request_state = HTTP_HEADER;
@@ -95,8 +96,6 @@ void    Request::fill_request(std::string request){
                 if (_Host_found != 1){
                     throw std::runtime_error("Bad Request7");
                 }
-
-
                 if (_Method == "POST"){
                     if ((_Headers.find("Content-Length") != _Headers.end()) && (_Headers.find("Transfer-Encoding") != _Headers.end()))
                         throw std::runtime_error("Bad Request15");
@@ -109,9 +108,6 @@ void    Request::fill_request(std::string request){
                     else
                         throw std::runtime_error("Bad Request16");
                 }
-
-
-
                 _request_state = HTTP_BODY;
                 continue ;
             }
@@ -125,22 +121,30 @@ void    Request::fill_request(std::string request){
         }
         else if (_request_state == HTTP_BODY)
         {
+            if (have_new_line)
+                line  += "\r\n";
             if (_Transfer_Mechanism == "Fixed"){
-                _Body += line += "\r\n";
+                if (_Body.size() + line.size() <= _Fixed_length)
+                    _Body += line;
+                else
+                    _Body += line.substr(0, _Fixed_length - _Body.size());
             }
             else if (_Transfer_Mechanism == "Chunked"){
-                _Body += line += "\r\n";
+                if (_Body.size() + line.size() > _Fixed_length)
+                    line = line.substr(0, _Fixed_length - _Body.size());
+
+                if (chunked_state == false){
+                    // std::cout << "0: " << line;
+                    std::cout << "state: " << chunked_state << " | " << "LENGTH" << std::endl;
+                    chunked_state = true;
+                }
+                else{
+                    // std::cout << "1: " << line;
+                    std::cout << "state: " << chunked_state << " | " << "DATA" << std::endl;
+                    chunked_state = false;
+                    // _Body += line;
+                }
             }
-
-
-
-
-            // Content-Length > Fixed_length = 400
-            // Content-Length < Fixed_length = ignore the rest
-
-            // Transfer-Encoding: chunked > actual size = 400
-            // Transfer-Encoding: chunked < actual size = ignore the rest
-            
         }
     }
 }
@@ -195,6 +199,14 @@ std::string Request::get_body(){
     return this->_Body;
 }
 
+void        Request::request_complete(){
+    if (_Transfer_Mechanism == "Fixed"){
+        _Body += _Buffer.substr(0, _Fixed_length - _Body.size());
+        if (_Fixed_length != _Body.size()){
+            throw std::runtime_error("Bad Request21");
+        }
+    }
+}
 
 
 

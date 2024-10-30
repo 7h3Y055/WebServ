@@ -39,9 +39,9 @@ class Request
         std::string get_URI();
         std::map<std::string, std::string> get_headers();
         std::string get_header(std::string key);
-        std::string header(std::string key);
         std::string get_body();
         std::string get_transfer_mechanism();
+        void        request_complete();
 
 
         Request();

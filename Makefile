@@ -19,7 +19,7 @@ $(NAME): $(OBJ)
 	@rm -rf $(OBJ)
 	@echo -e "\033[0;32mDone    \033[0m"
 	@clear
-	@./$(NAME) |  less
+	@./$(NAME) | cat -e |  less
 	# @nc -l 80 | ./$(NAME)
 
 %.o: %.cpp
