@@ -16,6 +16,8 @@ class Request
 
         std::string _Buffer;
         std::string _Method;
+        std::string _Transfer_Mechanism;
+        long long _Fixed_length;
         std::string _File_name;
         std::string _URI;
         std::string _Version;
@@ -32,12 +34,14 @@ class Request
         std::string get_method();
         std::string get_version();
         std::string get_file_name();
+        long long get_fixed_length();
         std::string get_Host();
         std::string get_URI();
         std::map<std::string, std::string> get_headers();
         std::string get_header(std::string key);
         std::string get_body();
-        // bool check_request();
+        std::string get_transfer_mechanism();
+        void        request_complete();
 
 
         Request();
