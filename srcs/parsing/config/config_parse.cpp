@@ -2,53 +2,40 @@
 
 using namespace std;
 
-void    config_parse(string file, vector<ServerConfig> &servers)
+bool	config_parse(string file, vector<ServerConfig> &servers)
 {
 	vector<map<string, string> >	locations;
 	map<string, string>				config;
+	map<string, string>				location;
 	ifstream						ifs(file);
 	string							line;
-	int								line_number = 1;
+	int								line_number = 0;
+	line_t							type_line;
 
-	if (!ifs.is_open())
-		throw runtime_error("Failed to open file: " + file + " !!");
 	while (getline(ifs, line))
 	{
-		if (line.empty() || line[0] == '#')
-			continue;
-		if (line.find("[SERVER] {") != string::npos)
-		{	
+		line_number++;
+		type_line = which_type(line);
+		if (type_line == SERVER)
+		{
 			config.clear();
 			locations.clear();
-			while (getline(ifs, line))
+			while (getline(ifs ,line))
 			{
-				if (line.empty() || line[0] == '#')
-					continue;
-				if (line.at(0) == '}')
-					break;
-				if (line.find("location:") != string::npos)
-				{
-					LOCATION:
-					map<string, string> location;
-					while (getline(ifs, line))
-					{
-						if (line.empty() || line[0] == '#')
-							continue;
-						if (line.find("}") != string::npos)
-							break;					/*check '=' exist because      here it's underfined behavior if .find() return string::nopos*/
-						location[line.substr(0, line.find("="))] = (line.find("=") != string::npos) ? line.substr(line.find("=") + 1) : "";
-						line_number++;
-					}
-					locations.push_back(location);
-				}
-				else													/* same check take a look above */
-					config[line.substr(0, line.find("="))] = (line.find("=") != string::npos) ? line.substr(line.find("=") + 1) : "";
 				line_number++;
+				type_line = which_type(line);
+				if (type_line == PAIR)
+				{
+					if (!set_config(line, config))
+						return (false);
+				}
 			}
-			servers.push_back(ServerConfig(config, locations));		
-		}
-		else
-			throw runtime_error("Syntax error in file: " + file + " at line: " + to_string(line_number) + " !!");
-		line_number++;
+		}	
 	}
+}
+
+
+bool	set_config(string line, map<string, string> &config)
+{
+	
 }

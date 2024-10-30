@@ -24,7 +24,7 @@ unsigned int	ServerConfig::get_location_count() const
 	return (this->__locations.size());
 }
 
-map<string, string>	ServerConfig::get_copy_location(unsigned int index) const
+map<string, string> const &ServerConfig::get_copy_location(unsigned int index) const
 {
 	return this->__locations.at(index);
 }

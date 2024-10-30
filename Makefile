@@ -5,7 +5,8 @@ CXX = c++
 CXXFLAGS = -std=c++98  #-Wall -Wextra -Werror #-fsanitize=address -g3
 
 SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
-		srcs/parsing/config/ServerConfig.cpp  srcs/parsing/config/config_parse.cpp
+		srcs/parsing/config/ServerConfig.cpp  srcs/parsing/config/config_parse.cpp\
+		srcs/parsing/config/config_checker.cpp
 
 INC = -Iincludes
 
