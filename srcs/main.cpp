@@ -49,7 +49,9 @@ void _Print_req(Request &req)
     {
         std::cout << "'" << it->first << "': '" << it->second << "'\n";
     }
-    std::cout << "}\nBody: {\n" << req.get_body() << "}" << std::endl;
+    std::cout << "}" << std::endl;
+    std::cout << "Content Type: " << req.get_transfer_mechanism() << std::endl;
+    std::cout << "Body: {" << req.get_body() << "}" << std::endl;
 }
 
 void _Run_server(Request &req, std::vector<int> fds)

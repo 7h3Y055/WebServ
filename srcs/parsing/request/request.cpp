@@ -1,7 +1,8 @@
 #include "webserv.hpp"
 
-std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters)
-{
+
+
+std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters){
     std::vector<std::string> strs;
     size_t start_pos = 0;
     size_t end_pos = 0;
@@ -52,7 +53,7 @@ long long string2ll(std::string str){
             if (!std::isdigit(str[i]))
                 throw std::runtime_error("Bad Request19");
         }
-        length = std::stoll(str);
+        length = std::atoll(str.c_str());
     }
     catch (std::exception &e){
         throw std::runtime_error("Bad Request20");
@@ -60,12 +61,38 @@ long long string2ll(std::string str){
     return length;
 }
 
+int ft_ishex(char c){
+    if (std::isxdigit(c))
+        return 1;
+    return 0;
+}
+
+unsigned long long hex2ll(std::string str){
+    str = str.substr(0, str.find('\r'));
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (!ft_ishex(str[i])) {
+            throw std::runtime_error("Bad Request22");
+        }
+    }
+
+    std::stringstream ss;
+    unsigned long long length;
+
+    ss << std::hex << str;
+    ss >> length;
+
+    return length;
+}
+
 void    Request::fill_request(std::string request){
     _Buffer += request;
+    if ( _Buffer.size() > 0 && _Transfer_Mechanism == "Chunked" && _request_state == HTTP_COMPLETE)
+        throw std::runtime_error("Bad Request22");
     std::string line;
-    bool chunked_state = false;
+    static bool chunked_state = false;
+    static unsigned long long chunked_length;
     bool have_new_line;
-    while (_Buffer.size() > 0 && (_Buffer.find("\r\n") != std::string::npos))
+    while (_Buffer.size() > 0 && (_Buffer.find("\r\n") != std::string::npos || _request_state == HTTP_BODY))
     {
         if (_Buffer.find("\r\n") != std::string::npos)
             have_new_line = true;
@@ -120,28 +147,35 @@ void    Request::fill_request(std::string request){
         }
         else if (_request_state == HTTP_BODY)
         {
-            if (have_new_line)
-                line  += "\r\n";
             if (_Transfer_Mechanism == "Fixed"){
-                if (_Body.size() + line.size() <= _Fixed_length)
+                if (have_new_line){
+                    line  += "\r\n";
+                }
+                if (_Body.size() + line.size() <= _Fixed_length){
+
                     _Body += line;
+                }
                 else
+                {
+
                     _Body += line.substr(0, _Fixed_length - _Body.size());
+                }
             }
             else if (_Transfer_Mechanism == "Chunked"){
-                if (_Body.size() + line.size() > _Fixed_length)
-                    line = line.substr(0, _Fixed_length - _Body.size());
-
+                if (line == "0\r\n" && _Buffer == "\r\n"){
+                    std::cout << "Done" << std::endl;
+                    _request_state = HTTP_COMPLETE;
+                    continue ;
+                }
                 if (chunked_state == false){
-                    // std::cout << "0: " << line;
-                    std::cout << "state: " << chunked_state << " | " << "LENGTH" << std::endl;
+                    chunked_length = hex2ll(line);
                     chunked_state = true;
                 }
                 else{
-                    // std::cout << "1: " << line;
-                    std::cout << "state: " << chunked_state << " | " << "DATA" << std::endl;
+                    if (line.size() < chunked_length)
+                        throw std::runtime_error("Bad Request23");
                     chunked_state = false;
-                    // _Body += line;
+                    _Body += line.substr(0, chunked_length);
                 }
             }
         }
@@ -204,6 +238,7 @@ void        Request::request_complete(){
         if (_Fixed_length != _Body.size()){
             throw std::runtime_error("Bad Request21");
         }
+        _request_state = HTTP_COMPLETE;
     }
 }
 

@@ -4,7 +4,8 @@ enum RequestState
 {
     HTTP_REQUEST_LINE,
     HTTP_HEADER,
-    HTTP_BODY
+    HTTP_BODY,
+    HTTP_COMPLETE
 };
 
 class Request
