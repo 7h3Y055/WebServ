@@ -1,5 +1,10 @@
 #pragma one
 
+
+
+#define CLIENT_BODY_SIZE 100
+
+
 enum RequestState
 {
     HTTP_REQUEST_LINE,
@@ -42,14 +47,9 @@ class Request
         std::string get_header(std::string key);
         std::string get_body();
         std::string get_transfer_mechanism();
-        void        request_complete();
 
 
         Request();
         ~Request();
-        Request(const Request& other);
-        Request& operator=(const Request& other);
-        Request(Request& other);
-        Request& operator=(Request& other);
 };
 

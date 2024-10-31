@@ -76,7 +76,8 @@ void _Run_server(Request &req, std::vector<int> fds)
         std::cout << "this is request == " << request << std::endl;
         std::cout << "-----------------------------------" << std::endl;
         req.fill_request(request);
-        _Print_req(req);
+        if (req.request_state() == HTTP_COMPLETE)
+            _Print_req(req);
         std::cout << "-----------------------------------" << std::endl;
         close(new_fd);
     }
