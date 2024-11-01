@@ -32,3 +32,7 @@
 
 
 #include "request.hpp"
+
+
+std::vector<int> _Create_servers(int nos, int *ports);
+void _Run_server(Request &req, std::vector<int> fds);
