@@ -1,9 +1,6 @@
 #pragma one
 
-
-
 #define CLIENT_BODY_SIZE 100000000
-
 
 enum RequestState
 {
@@ -46,7 +43,6 @@ class Request
         std::string get_header(std::string key);
         std::vector<char> &get_body();
         std::string get_transfer_mechanism();
-
 
         Request();
         ~Request();
