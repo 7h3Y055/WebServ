@@ -61,7 +61,6 @@ long long string2ll(std::string str){
         if (ss.fail()) {
             throw std::runtime_error("Bad Request6");
         }
-        std::cout << "QQQQQQQQQQQQQQQQQQQQQQQQQQ: " << length << std::endl;
     }
     catch (std::exception &e){
         throw std::runtime_error("Bad Request7");
@@ -102,22 +101,41 @@ std::string check_URI(std::string URI){
     return URI;
 }
 
-void    Request::fill_request(std::string request){
-    _Buffer += request;
+bool buffer_have_nl(std::vector<char> &buf, int _request_state, std::string _Transfer_Mechanism){
+    if (_request_state == HTTP_BODY && _Transfer_Mechanism == "Fixed")
+        return true;
+    for (size_t i = 0; i < buf.size(); i++){
+        if (buf[i] == '\r' && buf[i + 1] == '\n')
+            return true;
+    }
+    return false;
+}
+
+std::string get_http_line(std::vector<char> *buf){
     std::string line;
-    static bool chunked_state = false;
-    static unsigned long long chunked_length;
-    while (_request_state != HTTP_COMPLETE && _Buffer.size() > 0)
-    {
-        if (_request_state == HTTP_BODY && _Transfer_Mechanism == "Chunked" && _Buffer.find("\r\n") == std::string::npos){
-            break;
+    for (size_t i = 0; i < buf->size(); i++){
+        if ((*buf)[i] == '\r' && (*buf)[i + 1] == '\n'){
+            line = std::string(buf->begin(), buf->begin() + i);
+            buf->erase(buf->begin(), buf->begin() + i + 2);
+            return line;
         }
-        line = _Buffer.substr(0, _Buffer.find("\r\n"));
-        _Buffer = (_Buffer.find("\r\n") == std::string::npos) ? "" : _Buffer.substr(_Buffer.find("\r\n") + 2, std::string::npos);
-        if (line.empty() && _request_state == HTTP_REQUEST_LINE)
-            return ;
-        if (_request_state == HTTP_REQUEST_LINE)
-        {
+    }
+    return line;
+}
+
+void    Request::fill_request(std::vector<char> &buf){
+    _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
+    std::string line;
+    bool chunked_state = false;
+    unsigned long long chunked_length;
+    
+    while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
+    {
+        std::cout << "|";
+        if (_request_state == HTTP_REQUEST_LINE){
+            line = get_http_line(&_Buffer);
+            if (line.empty())
+                continue;
             std::vector<std::string> strs = split_string_with_multiple_delemetres(line, " \t\r\n");
             if (strs.size() == 3){
                 _Method = check_allowed_methods(strs[0]);
@@ -130,8 +148,9 @@ void    Request::fill_request(std::string request){
             }
             _request_state = HTTP_HEADER;
         }
-        else if (_request_state == HTTP_HEADER)
-        {
+        if (_request_state == HTTP_HEADER){
+            line = get_http_line(&_Buffer);
+            line = line.substr(0, line.find("\r\n"));
             if (line.empty()){
                 if (_Host_found != 1){
                     throw std::runtime_error("Bad Request13");
@@ -152,14 +171,16 @@ void    Request::fill_request(std::string request){
                     else
                         throw std::runtime_error("Bad Request15");
                 }
-                if (_Method != "POST")
+                if (_Method != "POST"){
+
                     _request_state = HTTP_COMPLETE;
+                }
                 else{
+
                     _request_state = HTTP_BODY;
                 }
                 continue ;
             }
-
             std::pair<std::string, std::string> header = fill_header(line);
             _Headers[header.first] = header.second;
             if (header.first == "Host"){
@@ -168,39 +189,34 @@ void    Request::fill_request(std::string request){
                     throw std::runtime_error("Bad Request16");
             }
         }
-        if (_request_state == HTTP_BODY)
-        {
+        if (_request_state == HTTP_BODY){
             if (_Transfer_Mechanism == "Fixed"){
-                _Body += line.substr(0, _Fixed_length - _Body.size());
-                if (_Fixed_length != _Body.size()){
-                    throw std::runtime_error("Bad Request18");
-                }
-                _request_state = HTTP_COMPLETE;
+                size_t size = (_Fixed_length < _Buffer.size() ? _Fixed_length : _Buffer.size());
+                _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
+                _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
+                if (_Body.size() == _Fixed_length)
+                    _request_state = HTTP_COMPLETE;
             }
             else if (_Transfer_Mechanism == "Chunked"){
-                if (line == "0"){
-                    _request_state = HTTP_COMPLETE;
-                }
                 if (chunked_state == false){
-                    chunked_length = hex2ll(line);
-                    std::cout << "[!!!!!!!!!!!!!] " << chunked_length << std::endl;
+                    std::string len = get_http_line(&_Buffer);
+                    chunked_length = hex2ll(len);
+                    if (chunked_length == 0){
+                        _request_state = HTTP_COMPLETE;
+                        return ;
+                    }
                     chunked_state = true;
                 }
-                else{
+                if (chunked_state == true){
+                    size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
+                    _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
+                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
                     chunked_state = false;
-                    if (line.size() < chunked_length)
-                        throw std::runtime_error("Bad Request17");
-                    _Body += line.substr(0, chunked_length);
                 }
-            }
-            if (_Body.size() >= CLIENT_BODY_SIZE){ // HERE
-                throw std::runtime_error("Too Large");
             }
         }
     }
 }
-
-
 
 int Request::request_state(){
     return this->_request_state;
@@ -246,7 +262,7 @@ std::string Request::get_header(std::string key){
     return this->_Headers[key];
 }
 
-std::string Request::get_body(){
+std::vector<char> &Request::get_body(){
     return this->_Body;
 }
 

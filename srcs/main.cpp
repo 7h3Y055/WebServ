@@ -34,7 +34,7 @@ std::vector<int> _Create_servers(int nos, int *ports)
     return fds;
 }
 
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 30000
 
 void _Print_req(Request &req)
 {
@@ -51,12 +51,43 @@ void _Print_req(Request &req)
     }
     std::cout << "}" << std::endl;
     std::cout << "Content Type: " << req.get_transfer_mechanism() << std::endl;
-    std::cout << "Body: {" << req.get_body() << "}" << std::endl;
+    if (req.get_transfer_mechanism() == "Fixed")
+        std::cout << "Content Length: " << req.get_fixed_length() << std::endl;
+    std::cout << "Request State: " << (req.request_state() == 3? "DONE":"NOT DONE") << std::endl;
+    std::cout << "Body: {";
+     for (std::vector<char>::iterator it = req.get_body().begin(); it != req.get_body().end(); ++it) {
+        std::ofstream outfile("a.png", std::ios_base::app);
+        if (outfile.is_open()) {
+            outfile << *it;
+            outfile.close();
+        } else {
+            std::cerr << "Unable to open file";
+        }
+        if (std::isprint(static_cast<unsigned char>(*it))) {
+            std::cout << *it;
+        } else {
+            switch (*it) {
+                case '\n':
+                    std::cout << "\\n";
+                    break;
+                case '\r':
+                    std::cout << "\\r";
+                    break;
+                case '\t':
+                    std::cout << "\\t";
+                    break;
+                default:
+                    std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)(unsigned char)*it;
+                    break;
+            }
+        }
+    }
+    std::cout << "}" << std::endl;
 }
 
 void _Run_server(Request &req, std::vector<int> fds)
 {
-    char buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE + 1];
     int new_fd;
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
@@ -72,12 +103,10 @@ void _Run_server(Request &req, std::vector<int> fds)
         if (ret == 0)
             break;
         buffer[ret] = '\0';
-        std::string request(buffer);
-        std::cout << "this is request == " << request << std::endl;
         std::cout << "-----------------------------------" << std::endl;
-        req.fill_request(request);
-        if (req.request_state() == HTTP_COMPLETE)
-            _Print_req(req);
+        std::vector<char> buf(buffer, buffer + ret);
+        req.fill_request(buf);
+        _Print_req(req);
         std::cout << "-----------------------------------" << std::endl;
         close(new_fd);
     }

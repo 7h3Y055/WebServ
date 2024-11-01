@@ -2,7 +2,7 @@
 
 
 
-#define CLIENT_BODY_SIZE 100
+#define CLIENT_BODY_SIZE 100000000
 
 
 enum RequestState
@@ -20,7 +20,7 @@ class Request
         bool _is_request_CGI;
         int _Host_found;
 
-        std::string _Buffer;
+        std::vector<char> _Buffer;
         std::string _Method;
         std::string _Transfer_Mechanism;
         long long _Fixed_length;
@@ -29,11 +29,10 @@ class Request
         std::string _Version;
         std::string _Host;
         std::map<std::string, std::string> _Headers;
-        std::string _Body;
+        std::vector<char> _Body;
     public:
 
-
-        void fill_request(std::string request);
+        void fill_request(std::vector<char> &buf);
 
         int request_state();
         bool is_request_CGI();
@@ -45,7 +44,7 @@ class Request
         std::string get_URI();
         std::map<std::string, std::string> get_headers();
         std::string get_header(std::string key);
-        std::string get_body();
+        std::vector<char> &get_body();
         std::string get_transfer_mechanism();
 
 

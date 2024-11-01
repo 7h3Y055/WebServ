@@ -2,7 +2,7 @@ NAME = webserv
 
 CXX = c++
 
-CXXFLAGS = -std=c++98  #-Wall -Wextra -Werror #-fsanitize=address -g3
+CXXFLAGS = -std=c++98  -g3 #-fsanitize=address #-Wall -Wextra -Werror
 
 SRC  = srcs/main.cpp srcs/parsing/request/request.cpp
 
@@ -18,8 +18,8 @@ $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(INC) $(OBJ) -o $(NAME)
 	@rm -rf $(OBJ)
 	@echo -e "\033[0;32mDone    \033[0m"
-	@clear
-	@./$(NAME) | cat -e
+	# @clear
+	# @./$(NAME) | cat -e
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
