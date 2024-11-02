@@ -21,7 +21,7 @@ $(NAME): $(OBJ)
 	@rm -rf $(OBJ)
 	@echo -e "\033[0;32mDone    \033[0m"
 	# @clear
-	# @./$(NAME) | cat -e
+	@./$(NAME) | cat -e
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@

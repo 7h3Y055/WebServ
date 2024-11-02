@@ -54,13 +54,6 @@ void _Print_req(Request &req)
     std::cout << "Request State: " << (req.request_state() == 3? "DONE":"NOT DONE") << std::endl;
     std::cout << "Body: {";
      for (std::vector<char>::iterator it = req.get_body().begin(); it != req.get_body().end(); ++it) {
-        std::ofstream outfile("a.png", std::ios_base::app);
-        if (outfile.is_open()) {
-            outfile << *it;
-            outfile.close();
-        } else {
-            std::cerr << "Unable to open file";
-        }
         if (std::isprint(static_cast<unsigned char>(*it))) {
             std::cout << *it;
         } else {
@@ -266,17 +259,13 @@ void _Run_server(Request &req, std::vector<int> fds)
                     if (clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                     {
                         std::cout << "-----------------------------------" << std::endl;
-                        // Response &res = clients[client_fd]->req.execute_request();
-                        // std::vector<char> response_binary = res.get_response();
-                        // response_binary send to client
-                        _Print_req(clients[client_fd]->req);
-                        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
-                        send(client_fd, response.c_str(), response.size(), 0);
+                        Response &res = clients[client_fd]->req.execute_request();
+                        std::vector<char> response_binary = res.get_response();
+                        send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                         delete clients[client_fd];
                         clients.erase(client_fd);
                         close(client_fd);
-                        std::cout << "-----------------------------------" << std::endl;
                     }
                 }
                 // usleep(100000);
