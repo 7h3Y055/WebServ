@@ -123,6 +123,12 @@ std::string get_http_line(std::vector<char> *buf){
     return line;
 }
 
+bool is_CGI(std::string file_name){
+    if (false)
+        return true;
+    return false;
+}
+
 void    Request::fill_request(std::vector<char> &buf){
     _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
     std::string line;
@@ -131,7 +137,6 @@ void    Request::fill_request(std::vector<char> &buf){
     
     while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
     {
-        std::cout << "|";
         if (_request_state == HTTP_REQUEST_LINE){
             line = get_http_line(&_Buffer);
             if (line.empty())
@@ -142,6 +147,7 @@ void    Request::fill_request(std::vector<char> &buf){
                 _URI = check_URI(strs[1]);
                 _Version = (strs[2] == "HTTP/1.1" ? strs[2] : throw std::runtime_error("Invalid request11"));
                 _File_name = _URI.substr(0, _URI.find('?'));
+                _is_request_CGI = is_CGI(_File_name);
             }
             else{
                 throw std::runtime_error("Invalid request12");
@@ -171,12 +177,10 @@ void    Request::fill_request(std::vector<char> &buf){
                     else
                         throw std::runtime_error("Bad Request15");
                 }
-                if (_Method != "POST"){
-
+                if (_Method != "POST" || (_Transfer_Mechanism == "Fixed" && _Fixed_length == 0)){
                     _request_state = HTTP_COMPLETE;
                 }
                 else{
-
                     _request_state = HTTP_BODY;
                 }
                 continue ;
@@ -217,6 +221,29 @@ void    Request::fill_request(std::vector<char> &buf){
         }
     }
 }
+
+Response &Request::execute_request(){
+    if (is_request_CGI()){
+        std::cout << "[CGI]" << std::endl;
+        // return CGI_Response();
+    }
+    else if (_Method == "GET"){
+        std::cout << "[GET]" << std::endl;
+        // return get_Response();
+    }
+    else if (_Method == "POST"){
+        std::cout << "[POST]" << std::endl;
+        // return post_Response(*this);
+    }
+    else if (_Method == "DELETE"){
+        std::cout << "[DELETE]" << std::endl;
+        // return delete_Response();
+    }
+
+    //
+    return post_Response(*this);
+}
+
 
 int Request::request_state(){
     return this->_request_state;

@@ -28,10 +28,13 @@
 #include <list>
 #include <iomanip>
 // include epoll.h
-//#include <sys/epoll.h>
-
+#include <sys/epoll.h>  
+#include <algorithm>
+#include <arpa/inet.h>
 
 #include "request.hpp"
+#include "Response.hpp"
+#include "post.hpp"
 
 
 std::vector<int> _Create_servers(int nos, int *ports);

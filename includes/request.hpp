@@ -1,6 +1,9 @@
 #pragma one
 
+
+
 #define CLIENT_BODY_SIZE 100000000
+
 
 enum RequestState
 {
@@ -9,6 +12,8 @@ enum RequestState
     HTTP_BODY,
     HTTP_COMPLETE
 };
+
+class Response;
 
 class Request
 {
@@ -30,6 +35,7 @@ class Request
     public:
 
         void fill_request(std::vector<char> &buf);
+        Response &execute_request();
 
         int request_state();
         bool is_request_CGI();
@@ -43,6 +49,7 @@ class Request
         std::string get_header(std::string key);
         std::vector<char> &get_body();
         std::string get_transfer_mechanism();
+
 
         Request();
         ~Request();
