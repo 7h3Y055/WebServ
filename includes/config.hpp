@@ -32,7 +32,7 @@ class Serv
         std::string host;
         std::string server_name;
         std::string root;
-        unsigned long long client_max_body_size;
+        double client_max_body_size;
         std::vector<location> locations;
         std::map <std::string, std::string> error_pages;
 

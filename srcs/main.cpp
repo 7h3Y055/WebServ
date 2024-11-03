@@ -11,7 +11,7 @@ int main(int ac, char **av)
     }
     
     for (size_t i = 0; i < servers.size(); ++i) {
-        std::cout << "SERVER " << (i + 1) << std::endl;
+        std::cout << "============[SERVER " << (i + 1) << "]" << std::endl;
         std::cout << "port: " << servers[i].port << std::endl;
         std::cout << "host: " << servers[i].host << std::endl;
         std::cout << "server_name: " << servers[i].server_name << std::endl;
@@ -22,25 +22,25 @@ int main(int ac, char **av)
             std::cout << it->first << " => " << it->second << std::endl;
         std::cout << "locations: " << std::endl;
         for (size_t j = 0; j < servers[i].locations.size(); ++j){
-            std::cout << "location " << j << std::endl;
-            std::cout << "path: " << servers[i].locations[j].path << std::endl;
-            std::cout << "methods: ";
+            std::cout << "    " << "location " << j << std::endl;
+            std::cout << "\t" << "path: " << servers[i].locations[j].path << std::endl;
+            std::cout << "\t" << "methods: ";
             for (size_t k = 0; k < servers[i].locations[j].methods.size(); ++k)
-                std::cout << servers[i].locations[j].methods[k] << " ";
-            std::cout << std::endl;
-            std::cout << "index: ";
+                std::cout << "\t" << servers[i].locations[j].methods[k] << " ";
+            std::cout << "\t" << std::endl;
+            std::cout << "\t" << "index: ";
             for (size_t k = 0; k < servers[i].locations[j].index.size(); ++k)
-                std::cout << servers[i].locations[j].index[k] << " ";
-            std::cout << std::endl;
-            std::cout << "directory_listing: " << servers[i].locations[j].directory_listing << std::endl;
-            std::cout << "upload_path: " << servers[i].locations[j].upload_path << std::endl;
-            std::cout << "cgi: " << std::endl;
+                std::cout << "\t" << servers[i].locations[j].index[k] << " ";
+            std::cout << "\t" << std::endl;
+            std::cout << "\t" << "directory_listing: " << servers[i].locations[j].directory_listing << std::endl;
+            std::cout << "\t" << "upload_path: " << servers[i].locations[j].upload_path << std::endl;
+            std::cout << "\t" << "cgi: " << std::endl;
             for (size_t k = 0; k < servers[i].locations[j].cgi.size(); ++k){
-                std::cout << "cgi " << k << std::endl;
+                std::cout << "\t" << "cgi " << k << std::endl;
                 for (std::map<std::string, std::string>::const_iterator it = servers[i].locations[j].cgi[k].begin(); it != servers[i].locations[j].cgi[k].end(); ++it)
-                    std::cout << it->first << " => " << it->second << std::endl;
+                    std::cout << "\t" << it->first << " => " << it->second << std::endl;
             }
-            std::cout << "redirection: " << servers[i].locations[j].redirection << std::endl;
+            std::cout << "\t" << "redirection: " << servers[i].locations[j].redirection << std::endl;
         }
     }
     

@@ -120,7 +120,7 @@ void read_location(std::ifstream &file, size_t &line_n, location &loc)
     }
 }
 
-unsigned long long convert_to_byte(std::string str){
+double convert_to_byte(std::string str){
     char last = str[str.size() - 1];
     if (std::isdigit(last))
         last = 0;
@@ -288,6 +288,7 @@ std::vector<Serv> parse_config(int ac, char **av)
 
     std::string line;
     size_t line_n = 0;
+    int server_n = 1;
     while (std::getline(file, line))
     {
         trim(line);
@@ -298,18 +299,29 @@ std::vector<Serv> parse_config(int ac, char **av)
             Serv server;
             read_server(file, line_n, server);
             set_default_error_pages(server);
+            if (server.port == 0 || server.host == "" || server.root == "" || (server.server_name == "" && server_n > 1))
+                throw std::runtime_error("Error: invalid server");
             servers.push_back(server);
+            server_n++;
         }
         else if (!line.empty()){
             throw std::runtime_error("Error: invalid config file");
         }
         line_n++;
     }
+    for (size_t i = 0; i < servers.size(); ++i) {
+        for (size_t j = i + 1; j < servers.size(); ++j) {
+            if (servers[i].server_name == servers[j].server_name) {
+                throw std::runtime_error("Error: duplicate server_name");
+            }
+        }
+    }
+    
     return servers;
 }
 
 
-Serv::Serv(/* args */)
+Serv::Serv(): port(0), host(""), server_name(""), root(""), client_max_body_size(-1)
 {
 }
 
