@@ -2,11 +2,11 @@ NAME = webserv
 
 CXX = c++
 
-CXXFLAGS = -std=c++98  #-Wall -Wextra -Werror #-fsanitize=address -g3
+CXXFLAGS = -std=c++98  -g3 #-fsanitize=address #-Wall -Wextra -Werror
 
 SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
-		srcs/parsing/config/ServerConfig.cpp  srcs/parsing/config/config_parse.cpp\
-		srcs/parsing/config/config_checker.cpp
+	srcs/_Create_Server.cpp srcs/methods/_Post/post.cpp \
+	srcs/response/response.cpp
 
 INC = -Iincludes
 
@@ -19,7 +19,11 @@ OBJ = $(SRC:.cpp=.o)
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(INC) $(OBJ) -o $(NAME)
+	@$(CXX) $(CXXFLAGS) $(INC) $(OBJ) -o $(NAME)
+	@rm -rf $(OBJ)
+	@echo -e "\033[0;32mDone    \033[0m"
+	# @clear
+	@./$(NAME) | cat -e
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@

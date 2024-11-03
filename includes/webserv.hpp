@@ -26,8 +26,16 @@
 #include <vector>
 #include <deque>
 #include <list>
+#include <iomanip>
 // include epoll.h
-// #include <sys/epoll.h>
-
+#include <sys/epoll.h>  
+#include <algorithm>
+#include <arpa/inet.h>
 
 #include "request.hpp"
+#include "Response.hpp"
+#include "post.hpp"
+
+
+std::vector<int> _Create_servers(int nos, int *ports);
+void _Run_server(Request &req, std::vector<int> fds);
