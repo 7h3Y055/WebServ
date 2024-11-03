@@ -34,8 +34,14 @@
 
 #include "request.hpp"
 #include "Response.hpp"
+#include "config.hpp"
 #include "post.hpp"
+
+using namespace std;
 
 
 std::vector<int> _Create_servers(int nos, int *ports);
 void _Run_server(Request &req, std::vector<int> fds);
+std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters);
+
+
