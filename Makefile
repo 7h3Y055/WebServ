@@ -12,7 +12,7 @@ INC = -Iincludes
 
 OBJ = $(SRC:.cpp=.o)
 
-.SILENT:
+# .SILENT:
 
 all: $(NAME)
 

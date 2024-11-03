@@ -9,6 +9,7 @@ class location
     private:
         /* data */
     public:
+        std::map<std::string, std::string> already_set;
         std::string path;
         std::vector<std::string> methods;
         std::vector<std::string> index;
@@ -26,11 +27,12 @@ class Serv
     private:
         
     public:
+        std::map<std::string, std::string> already_set;
         unsigned int port;
         std::string host;
         std::string server_name;
         std::string root;
-        std::string client_max_body_size;
+        unsigned long long client_max_body_size;
         std::vector<location> locations;
         std::map <std::string, std::string> error_pages;
 

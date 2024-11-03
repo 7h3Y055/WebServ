@@ -9,13 +9,13 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
 
     if (str.empty())
         return strs;
-    // while (end_pos != std::string::npos && start_pos < str.size())
-    // {
-    //     end_pos = str.find_first_of(delimiters, start_pos);
-    //     if (start_pos != end_pos)
-    //         strs.push_back(str.substr(start_pos, end_pos - start_pos));
-    //     start_pos = end_pos + 1;
-    // }
+    while (end_pos != std::string::npos && start_pos < str.size())
+    {
+        end_pos = str.find_first_of(delimiters, start_pos);
+        if (start_pos != end_pos)
+            strs.push_back(str.substr(start_pos, end_pos - start_pos));
+        start_pos = end_pos + 1;
+    }
     return strs;
 }
 
