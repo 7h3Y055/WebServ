@@ -36,12 +36,14 @@
 #include "Response.hpp"
 #include "config.hpp"
 #include "post.hpp"
+#include "client.hpp"
 
 using namespace std;
 
 
-std::vector<int> _Create_servers(int nos, int *ports);
-void _Run_server(Request &req, std::vector<int> fds);
+std::vector<Serv> _Create_Servers(std::vector<Serv> &servers);
+void _Run_Server(Request &req, std::vector<Serv> _Servers);
 std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters);
+
 
 
