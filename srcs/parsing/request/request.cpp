@@ -7,6 +7,8 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
     size_t start_pos = 0;
     size_t end_pos = 0;
 
+    if (str.empty())
+        return strs;
     while (end_pos != std::string::npos && start_pos < str.size())
     {
         end_pos = str.find_first_of(delimiters, start_pos);
