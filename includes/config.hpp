@@ -42,7 +42,6 @@ class location
 class Serv
 {
     private:
-        int fd;
         int port;
         std::string host;
         std::vector<std::string> server_name;
@@ -66,20 +65,8 @@ class Serv
 
         Serv();
         ~Serv();
-
-        void setFd(int f) {
-            fd = f;
-        }
-        int getFd() {
-            return fd;
-        }
-
-        struct sockaddr_in addr;
 };
 
 
-
-
 std::vector<Serv> parse_config(int ac, char **av);
-void _Print_req(Request &req);
 
