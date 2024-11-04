@@ -7,6 +7,8 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
     size_t start_pos = 0;
     size_t end_pos = 0;
 
+    if (str.empty())
+        return strs;
     while (end_pos != std::string::npos && start_pos < str.size())
     {
         end_pos = str.find_first_of(delimiters, start_pos);
@@ -222,7 +224,7 @@ void    Request::fill_request(std::vector<char> &buf){
     }
 }
 
-Response &Request::execute_request(){
+Response Request::execute_request(){
     if (is_request_CGI()){
         std::cout << "[CGI]" << std::endl;
         // return CGI_Response();
@@ -233,15 +235,22 @@ Response &Request::execute_request(){
     }
     else if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;
-        // return post_Response(*this);
+        return post_Response(*this);
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
         // return delete_Response();
     }
 
-    // just for testing
     return post_Response(*this);
+    // Response *res = new Response(*this);
+    // res->set_status_code(200);
+    // res->set_status_message("OK");
+    // res->set_header("Content-Type", "text/html");
+    // std::string content = "<html><body><CENTER><h1>TEST</h1></CENTER></body></html>";
+    // std::vector<char> body(content.begin(), content.end());
+    // res->set_body(body);
+    // return *res;
 }
 
 

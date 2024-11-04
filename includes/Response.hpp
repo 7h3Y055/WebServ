@@ -21,3 +21,6 @@ class Response
         Response(Request &req);
         ~Response();
 };
+
+
+Response &createResponse(int code, Request &req);
