@@ -1,5 +1,5 @@
 # NOTES:
-1) 
+1) check the paths if exist
 2) 
 3) 
 4) 

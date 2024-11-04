@@ -1,20 +1,46 @@
-#ifndef CONFIG_HPP
-# define CONFIG_HPP
-#include "ServerConfig.hpp"
-#include <iostream>
-#include <fstream>
+#pragma once
 
-typedef enum line_e
+
+#include <vector>
+#include <map>
+
+class location
 {
-	SERVER,
-	LOCATION,
-	PAIR,
-	COMMANT,
-	EMPTY,
-	SYNTAX_ERROR
-}	line_t;
+    private:
+        /* data */
+    public:
+        std::map<std::string, std::string> already_set;
+        std::string path;
+        std::vector<std::string> methods;
+        std::vector<std::string> index;
+        int directory_listing;
+        std::string upload_path;
+        std::vector<std::map<std::string, std::string> > cgi;
+        std::string redirection;
+};
 
-bool    config_parse(std::string file, vector<ServerConfig> &servers);
-line_t	which_type(std::string line);
 
-#endif // CONFIG_HPP
+
+
+class Serv
+{
+    private:
+        
+    public:
+        std::map<std::string, std::string> already_set;
+        unsigned int port;
+        std::string host;
+        std::string server_name;
+        std::string root;
+        double client_max_body_size;
+        std::vector<location> locations;
+        std::map <std::string, std::string> error_pages;
+
+
+        Serv(/* args */);
+        ~Serv();
+};
+
+
+std::vector<Serv> parse_config(int ac, char **av);
+
