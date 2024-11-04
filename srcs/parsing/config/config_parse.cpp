@@ -155,21 +155,20 @@ void init_server(Serv &server, std::vector<string> &strs){
     trim(server_strs[0]);
     trim(server_strs[1]);
 
-    if (server_strs[0] == "ports" || server_strs[0] == "PORTs"){
-        if (server.already_set["ports"] == "true")
-            throw std::runtime_error("Error: duplicate ports");
-        server.already_set["ports"] = "true";
+    if (server_strs[0] == "port" || server_strs[0] == "PORT"){
+        if (server.already_set["port"] == "true")
+            throw std::runtime_error("Error: duplicate port");
+        server.already_set["port"] = "true";
         if (server_strs.size() < 2)
-            throw std::runtime_error("Error: invalid ports");
-        std::vector<string> ports = split_string_with_multiple_delemetres(server_strs[1], "\t\n\v\f\r ,");
-        for (size_t i = 0; i < ports.size(); ++i){
-            if (!isdigit(ports[i][0]))
-                throw std::runtime_error("Error: invalid ports");
-            double n = atof(ports[i].c_str());
-            if (n < 0 || n > 65535 || n != (int)n)
-                throw std::runtime_error("Error: invalid ports");
-            server.getPorts().push_back(n);
+            throw std::runtime_error("Error: invalid port");
+        for (size_t i = 0; i < server_strs[1].size(); ++i){
+            if (!isdigit(server_strs[1][i]))
+                throw std::runtime_error("Error: invalid port");
         }
+        double n = atof(server_strs[1].c_str());
+        if (n < 0 || n > 65535 || n != (int)n)
+            throw std::runtime_error("Error: invalid port");
+        server.getPort() = n;
     }
     else if (server_strs[0] == "host" || server_strs[0] == "HOST"){
         if (server.already_set["host"] == "true")
@@ -317,7 +316,7 @@ std::vector<Serv> parse_config(int ac, char **av)
             Serv server;
             read_server(file, line_n, server);
             set_default_error_pages(server);
-            if (server.getPorts().size() == 0 || server.getHost() == "" || server.getRoot() == "" || (server.getServerName().size() == 0 && server_n > 1))
+            if (server.getPort() == 0 || server.getHost() == "" || server.getRoot() == "" || (server.getServerName().size() == 0 && server_n > 1))
                 throw std::runtime_error("Error: invalid server");
             add_default_location(server);
             servers.push_back(server);

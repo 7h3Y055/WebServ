@@ -42,7 +42,7 @@ class location
 class Serv
 {
     private:
-        std::vector<int> ports;
+        int port;
         std::string host;
         std::vector<std::string> server_name;
         std::string root;
@@ -53,7 +53,7 @@ class Serv
     public:
         std::map<std::string, std::string> already_set;
         // Getters
-        std::vector<int> &getPorts() { return ports; }
+        int &getPort() { return port; }
         std::string &getHost() { return host; }
         std::vector<std::string> &getServerName() { return server_name; }
         std::string &getRoot() { return root; }
