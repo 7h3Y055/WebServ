@@ -42,9 +42,9 @@ class location
 class Serv
 {
     private:
-        unsigned int port;
+        std::vector<int> ports;
         std::string host;
-        std::string server_name;
+        std::vector<std::string> server_name;
         std::string root;
         double client_max_body_size;
         std::vector<location> locations;
@@ -53,9 +53,9 @@ class Serv
     public:
         std::map<std::string, std::string> already_set;
         // Getters
-        unsigned int &getPort() { return port; }
+        std::vector<int> &getPorts() { return ports; }
         std::string &getHost() { return host; }
-        std::string &getServerName() { return server_name; }
+        std::vector<std::string> &getServerName() { return server_name; }
         std::string &getRoot() { return root; }
         long long getClientMaxBodySize() { return static_cast<long long>(client_max_body_size); }
         std::vector<location> &getLocations() { return locations; }

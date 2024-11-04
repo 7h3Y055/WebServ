@@ -259,6 +259,7 @@ void _Run_server(Request &req, std::vector<int> fds)
                     if (clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                     {
                         std::cout << "-----------------------------------" << std::endl;
+                        // clients[client_fd]->req.config = ;
                         Response &res = clients[client_fd]->req.execute_request();
                         std::vector<char> response_binary = res.get_response();
                         send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
