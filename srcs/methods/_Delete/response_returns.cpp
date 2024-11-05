@@ -1,12 +1,7 @@
 #include "webserv.hpp"
-#include "utils.cpp"
 
 string content = "<html><body><h1>DELETE</h1></body></html>";
-
 vector<char> body(content.begin(), content.end());
-
-
-
 
 void	error_404(Response *res)
 {
