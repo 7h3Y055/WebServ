@@ -20,10 +20,6 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(INC) $(OBJ) -o $(NAME)
-	@rm -rf $(OBJ)
-	@echo -e "\033[0;32mDone    \033[0m"
-	@clear
-	@./$(NAME)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
