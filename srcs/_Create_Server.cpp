@@ -259,9 +259,12 @@ void _Run_server(Request &req, std::vector<int> fds)
                     if (clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                     {
                         std::cout << "-----------------------------------" << std::endl;
-                        Response &res = clients[client_fd]->req.execute_request();
+                        // clients[client_fd]->req.get_Host == "localhost" || ;
+                        // clients[client_fd]->req.config = ;
+                        Response res = clients[client_fd]->req.execute_request();
                         std::vector<char> response_binary = res.get_response();
                         send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
+                        send(client_fd, "\r\n", 2, 0);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                         delete clients[client_fd];
                         clients.erase(client_fd);

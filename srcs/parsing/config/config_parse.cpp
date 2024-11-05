@@ -40,44 +40,44 @@ void init_location(location &loc, std::vector<string> &strs)
 
 
     trim(strs[0]);
-    if (strs[0] == "methods"){
+    if (strs[0] == "methods" || strs[0] == "METHODS"){
         if (loc.already_set["methods"] == "true")
             throw std::runtime_error("Error: duplicate methods");
         loc.already_set["methods"] = "true";
         if (strs.size() == 2){
-            parse_methods(loc.methods, strs[1]);
+            parse_methods(loc.getMethods(), strs[1]);
         }
     }
-    else if (strs[0] == "index"){
+    else if (strs[0] == "index" || strs[0] == "INDEX"){
         if (loc.already_set["index"] == "true")
             throw std::runtime_error("Error: duplicate index");
         loc.already_set["index"] = "true";
         if (strs.size() < 2)
             throw std::runtime_error("Error: invalid index");
-        loc.index = split_string_with_multiple_delemetres(strs[1], "\t\n\v\f\r ,");
+        loc.setIndex(split_string_with_multiple_delemetres(strs[1], "\t\n\v\f\r ,"));
     }
-    else if (strs[0] == "directory_listing"){
+    else if (strs[0] == "directory_listing" || strs[0] == "DIRECTORY_LISTING"){
         if (loc.already_set["directory_listing"] == "true")
             throw std::runtime_error("Error: duplicate directory_listing");
         loc.already_set["directory_listing"] = "true";
         if (strs.size() != 2)
             throw std::runtime_error("Error: invalid directory_listing");
-        if (strs[1] == "on")
-            loc.directory_listing = 1;
-        else if (strs[1] == "off")
-            loc.directory_listing = 0;
+        if (strs[1] == "on" || strs[1] == "ON")
+            loc.setDirectoryListing(true);
+        else if (strs[1] == "off" || strs[1] == "OFF")
+            loc.setDirectoryListing(false);
         else
             throw std::runtime_error("Error: invalid directory_listing");
     }
-    else if (strs[0] == "upload_path"){
+    else if (strs[0] == "upload_path" || strs[0] == "UPLOAD_PATH"){
         if (loc.already_set["upload_path"] == "true")
             throw std::runtime_error("Error: duplicate upload_path");
         loc.already_set["upload_path"] = "true";
         if (strs.size() != 2)
             throw std::runtime_error("Error: invalid upload_path");
-        loc.upload_path = strs[1];
+        loc.setUploadPath(strs[1]);
     }
-    else if (strs[0] == "cgi"){
+    else if (strs[0] == "cgi" || strs[0] == "CGI"){
         if (strs.size() != 2)
             throw std::runtime_error("Error: invalid cgi");
         std::vector<string> cgi = split_string_with_multiple_delemetres(strs[1], "\t\n\v\f\r :");
@@ -85,15 +85,15 @@ void init_location(location &loc, std::vector<string> &strs)
             throw std::runtime_error("Error: invalid cgi");
         std::map<std::string, std::string> cgi_map;
         cgi_map[cgi[0]] = cgi[1];
-        loc.cgi.push_back(cgi_map);
+        loc.getCgi().push_back(cgi_map);
     }
-    else if (strs[0] == "redirection"){
+    else if (strs[0] == "redirection" || strs[0] == "REDIRECTION"){
         if (strs.size() != 2)
             throw std::runtime_error("Error: invalid redirection");
         if (loc.already_set["redirection"] == "true")
             throw std::runtime_error("Error: duplicate redirection");
         loc.already_set["redirection"] = "true";
-        loc.redirection = strs[1];
+        loc.setRedirection(strs[1]);
     }
     else{
         throw std::runtime_error("Error: invalid location");
@@ -155,59 +155,63 @@ void init_server(Serv &server, std::vector<string> &strs){
     trim(server_strs[0]);
     trim(server_strs[1]);
 
-    if (server_strs[0] == "port"){
+    if (server_strs[0] == "port" || server_strs[0] == "PORT"){
         if (server.already_set["port"] == "true")
             throw std::runtime_error("Error: duplicate port");
         server.already_set["port"] = "true";
         if (server_strs.size() < 2)
             throw std::runtime_error("Error: invalid port");
-        for (size_t i = 0; i < server_strs[1].size(); i++)
+        for (size_t i = 0; i < server_strs[1].size(); ++i){
             if (!isdigit(server_strs[1][i]))
                 throw std::runtime_error("Error: invalid port");
+        }
         double n = atof(server_strs[1].c_str());
         if (n < 0 || n > 65535 || n != (int)n)
             throw std::runtime_error("Error: invalid port");
-        server.port = n;
+        server.getPort() = n;
     }
-    else if (server_strs[0] == "host"){
+    else if (server_strs[0] == "host" || server_strs[0] == "HOST"){
         if (server.already_set["host"] == "true")
             throw std::runtime_error("Error: duplicate host");
         server.already_set["host"] = "true";
         if (server_strs.size() != 2)
             throw std::runtime_error("Error: invalid host");
-        server.host = server_strs[1];
+        server.getHost() = server_strs[1];
     }
-    else if (server_strs[0] == "server_name"){
-        if (server.already_set["server_name"] == "true")
-            throw std::runtime_error("Error: duplicate server_name");
-        server.already_set["server_name"] = "true";
+    else if (server_strs[0] == "server_names" || server_strs[0] == "SERVER_NAMEs"){
+        if (server.already_set["server_names"] == "true")
+            throw std::runtime_error("Error: duplicate server_names");
+        server.already_set["server_names"] = "true";
         if (server_strs.size() != 2)
-            throw std::runtime_error("Error: invalid server_name");
-        server.server_name = server_strs[1];
+            throw std::runtime_error("Error: invalid server_names");
+        std::vector<string> server_names = split_string_with_multiple_delemetres(server_strs[1], "\t\n\v\f\r ,");
+        for (size_t i = 0; i < server_names.size(); ++i){
+            server.getServerName().push_back(server_names[i]);
+        }
     }
-    else if (server_strs[0] == "root"){
+    else if (server_strs[0] == "root" || server_strs[0] == "ROOT"){
         if (server.already_set["root"] == "true")
             throw std::runtime_error("Error: duplicate root");
         server.already_set["root"] = "true";
         if (server_strs.size() != 2)
             throw std::runtime_error("Error: invalid root");
-        server.root = server_strs[1];
+        server.getRoot() = server_strs[1];
     }
-    else if (server_strs[0] == "client_max_body_size"){
+    else if (server_strs[0] == "client_max_body_size" || server_strs[0] == "CLIENT_MAX_BODY_SIZE"){
         if (server.already_set["client_max_body_size"] == "true")
             throw std::runtime_error("Error: duplicate client_max_body_size");
         server.already_set["client_max_body_size"] = "true";
         if (server_strs.size() != 2)
             throw std::runtime_error("Error: invalid client_max_body_size");
-        server.client_max_body_size = convert_to_byte(server_strs[1]);
+        server.setClienMaxBodySize(convert_to_byte(server_strs[1]));
     }
-    else if (server_strs[0] == "error_page"){
+    else if (server_strs[0] == "error_page" || server_strs[0] == "ERROR_PAGE"){
         std::vector<string> error_page = split_string_with_multiple_delemetres(server_strs[1], "\t\n\v\f\r :");
         if (error_page.size() != 2)
             throw std::runtime_error("Error: invalid error_page");
-        if (server.error_pages.find(error_page[0]) != server.error_pages.end())
+        if (server.getErrorPages().find(error_page[0]) != server.getErrorPages().end())
             throw std::runtime_error("Error: duplicate error_page");
-        server.error_pages[error_page[0]] = error_page[1];
+        server.getErrorPages()[error_page[0]] = error_page[1];
     }
     else{
         throw std::runtime_error("Error: invalid server");
@@ -226,14 +230,14 @@ void read_server(std::ifstream &file, size_t &line_n, Serv &server)
         if (line == "}SERVER")
             return;
         strs = split_string_with_multiple_delemetres(line, "\t\n\v\f\r ");
-        if (strs[0] == "location")
+        if (strs[0] == "location" || strs[0] == "LOCATION")
         {
             if (strs.size() != 3 || strs[2] != "{")
                 throw std::runtime_error("Error: invalid location");
             location loc;
-            loc.path = strs[1];
+            loc.setPath(strs[1]);
             read_location(file, line_n, loc);
-            server.locations.push_back(loc);
+            server.getLocations().push_back(loc);
         }
         else{
             init_server(server, strs);
@@ -241,31 +245,44 @@ void read_server(std::ifstream &file, size_t &line_n, Serv &server)
         
         line_n++;
     }
+    throw std::runtime_error("Error: invalid server");
 }
 
 void set_default_error_pages(Serv &server){
-    if (server.error_pages.find("400") == server.error_pages.end())
-        server.error_pages["400"] = "error_pages/400.html";
-    if (server.error_pages.find("401") == server.error_pages.end())
-        server.error_pages["401"] = "error_pages/401.html";
-    if (server.error_pages.find("403") == server.error_pages.end())
-        server.error_pages["403"] = "error_pages/403.html";
-    if (server.error_pages.find("404") == server.error_pages.end())
-        server.error_pages["404"] = "error_pages/404.html";
-    if (server.error_pages.find("405") == server.error_pages.end())
-        server.error_pages["405"] = "error_pages/405.html";
-    if (server.error_pages.find("500") == server.error_pages.end())
-        server.error_pages["500"] = "error_pages/500.html";
-    if (server.error_pages.find("501") == server.error_pages.end())
-        server.error_pages["501"] = "error_pages/501.html";
-    if (server.error_pages.find("505") == server.error_pages.end())
-        server.error_pages["505"] = "error_pages/505.html";
-    if (server.error_pages.find("414") == server.error_pages.end())
-        server.error_pages["414"] = "error_pages/414.html";
-    if (server.error_pages.find("413") == server.error_pages.end())
-        server.error_pages["413"] = "error_pages/413.html";
-    if (server.error_pages.find("409") == server.error_pages.end())
-        server.error_pages["409"] = "error_pages/413.html";
+    if (server.getErrorPages().find("400") == server.getErrorPages().end())
+        server.getErrorPages()["400"] = "error_pages/400.html";
+    if (server.getErrorPages().find("401") == server.getErrorPages().end())
+        server.getErrorPages()["401"] = "error_pages/401.html";
+    if (server.getErrorPages().find("403") == server.getErrorPages().end())
+        server.getErrorPages()["403"] = "error_pages/403.html";
+    if (server.getErrorPages().find("404") == server.getErrorPages().end())
+        server.getErrorPages()["404"] = "error_pages/404.html";
+    if (server.getErrorPages().find("405") == server.getErrorPages().end())
+        server.getErrorPages()["405"] = "error_pages/405.html";
+    if (server.getErrorPages().find("500") == server.getErrorPages().end())
+        server.getErrorPages()["500"] = "error_pages/500.html";
+    if (server.getErrorPages().find("501") == server.getErrorPages().end())
+        server.getErrorPages()["501"] = "error_pages/501.html";
+    if (server.getErrorPages().find("505") == server.getErrorPages().end())
+        server.getErrorPages()["505"] = "error_pages/505.html";
+    if (server.getErrorPages().find("414") == server.getErrorPages().end())
+        server.getErrorPages()["414"] = "error_pages/414.html";
+    if (server.getErrorPages().find("413") == server.getErrorPages().end())
+        server.getErrorPages()["413"] = "error_pages/413.html";
+    if (server.getErrorPages().find("409") == server.getErrorPages().end())
+        server.getErrorPages()["409"] = "error_pages/413.html";
+}
+
+void add_default_location(Serv &server){
+    for (size_t i = 0; i < server.getLocations().size(); ++i){
+        if (server.getLocations()[i].getPath() == "/")
+            return;
+    }
+    location loc;
+    loc.getPath() = "/";
+    loc.getMethods().push_back("GET");
+    loc.setDirectoryListing(false);
+    server.getLocations().push_back(loc);
 }
 
 std::vector<Serv> parse_config(int ac, char **av)
@@ -299,8 +316,9 @@ std::vector<Serv> parse_config(int ac, char **av)
             Serv server;
             read_server(file, line_n, server);
             set_default_error_pages(server);
-            if (server.port == 0 || server.host == "" || server.root == "" || (server.server_name == "" && server_n > 1))
+            if (server.getPort() == 0 || server.getHost() == "" || server.getRoot() == "" || (server.getServerName().size() == 0 && server_n > 1))
                 throw std::runtime_error("Error: invalid server");
+            add_default_location(server);
             servers.push_back(server);
             server_n++;
         }
@@ -311,20 +329,33 @@ std::vector<Serv> parse_config(int ac, char **av)
     }
     for (size_t i = 0; i < servers.size(); ++i) {
         for (size_t j = i + 1; j < servers.size(); ++j) {
-            if (servers[i].server_name == servers[j].server_name) {
-                throw std::runtime_error("Error: duplicate server_name");
+            for (size_t k = 0; k < servers[i].getServerName().size(); ++k) {
+                for (size_t l = 0; l < servers[j].getServerName().size(); ++l) {
+                    if (servers[i].getServerName()[k] == servers[j].getServerName()[l])
+                        throw std::runtime_error("Error: duplicate server name");
+                }
             }
         }
     }
-    
+    if (servers.size() == 0)
+        throw std::runtime_error("Error: no server");
     return servers;
 }
 
 
-Serv::Serv(): port(0), host(""), server_name(""), root(""), client_max_body_size(-1)
+Serv::Serv():host(""), root(""), client_max_body_size(-1)
 {
 }
 
 Serv::~Serv()
 {
+}
+
+location::location(): path(""), directory_listing(0), upload_path(""), redirection("")
+{
+
+}
+
+location::~location(){
+
 }

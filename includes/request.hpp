@@ -15,6 +15,8 @@ enum RequestState
 
 class Response;
 
+class Serv;
+
 class Request
 {
     private:
@@ -35,7 +37,10 @@ class Request
     public:
 
         void fill_request(std::vector<char> &buf);
-        Response &execute_request();
+        Response execute_request();
+
+
+        // Serv config;
 
         int request_state();
         bool is_request_CGI();
