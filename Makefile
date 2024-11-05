@@ -6,7 +6,9 @@ CXXFLAGS = -std=c++98  -g3 #-fsanitize=address #-Wall -Wextra -Werror
 
 SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
 	srcs/_Create_Server.cpp srcs/methods/_Post/post.cpp \
-	srcs/response/response.cpp srcs/response/error_response.cpp srcs/parsing/config/config_parse.cpp
+	srcs/response/response.cpp srcs/response/error_response.cpp\
+	srcs/parsing/config/config_parse.cpp srcs/methods/_Delete/delete_Response.cpp\
+	srcs/methods/_Delete/response_returns.cpp srcs/methods/_Delete/utils.cpp
 
 INC = -Iincludes
 
