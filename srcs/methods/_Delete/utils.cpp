@@ -1,10 +1,4 @@
 #include "webserv.hpp"
-#ifndef _DELETE_UTILS_HPP
-#define _DELETE_UTILS_HPP
-using namespace std;
-#include <time.h>
-#include <iomanip>
-
 
 bool    is_source_a_directory(std::string source)
 {
@@ -58,5 +52,3 @@ string  to_string(ssize_t nbr)
     ss << nbr;
     return ss.str();
 }
-
-#endif
