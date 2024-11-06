@@ -77,94 +77,10 @@ void _Print_req(Request &req)
     std::cout << "}" << std::endl;
 }
 
-#define BUFFER_SIZE 1024
-#define MAX_EVENTS 10
 
-class Server
-{
-    private:
-        int _fd;
-    public:
-
-};
-
-class Client
-{
-    private:
-        int _fd;
-        struct sockaddr_in _address;
-        std::string _ip;
-        int _port;
-
-        char _buffer[BUFFER_SIZE];
-        size_t _read_pos;
-        time_t _last_read;
-        size_t _bytes_received;
-        size_t _bytes_sent;
-
-        RequestState _state;
-
-    public:
-        Client(int fd, struct sockaddr_in address)
-        {
-            _fd = fd;
-            _address = address;
-            _ip = inet_ntoa(address.sin_addr);
-            _port = ntohs(address.sin_port);
-            _read_pos = 0;
-            _last_read = time(NULL);
-            _bytes_received = 0;
-            _bytes_sent = 0;
-            _state = HTTP_REQUEST_LINE;
-        }
-        ~Client() {
-            close(_fd);
-        }
-        int get_fd() {
-            return _fd;
-        }
-        std::string get_ip() {
-            return _ip;
-        }
-        int get_port() {
-            return _port;
-        }
-        struct sockaddr_in get_address() {
-            return _address;
-        }
-        char *get_buffer() {
-            return _buffer;
-        }
-        size_t get_read_pos() {
-            return _read_pos;
-        }
-        void set_read_pos(size_t pos){
-            _read_pos = pos;
-        }
-        time_t get_last_read() {
-            return _last_read;
-        }
-        size_t get_bytes_received() {
-            return _bytes_received;
-        }
-        void set_bytes_received(size_t bytes) {
-            _bytes_received = bytes;
-        }
-        size_t get_bytes_sent() {
-            return _bytes_sent;
-        }
-        void set_bytes_sent(size_t bytes){
-            _bytes_sent = bytes;
-        }
-        RequestState get_state() {
-            return _state;
-        }
-        void set_state(RequestState state){
-            _state = state;
-        }
-
-        Request req;
-};
+int get_server_index(std::string Host){
+    return 0;
+}
 
 void _Run_server(Request &req, std::vector<int> fds)
 {
@@ -255,16 +171,13 @@ void _Run_server(Request &req, std::vector<int> fds)
                     clients[client_fd]->set_bytes_received(clients[client_fd]->get_bytes_received() + ret);
                     char *buffer = clients[client_fd]->get_buffer();
                     std::vector<char> buf(buffer, buffer + ret);
-                    clients[client_fd]->req.fill_request(buf);
-                    if (clients[client_fd]->req.request_state() == HTTP_COMPLETE)
+                    clients[client_fd]->fill_request(buf);
+                    if (clients[client_fd]->get_req_state() == HTTP_COMPLETE)
                     {
                         std::cout << "-----------------------------------" << std::endl;
-                        // clients[client_fd]->req.get_Host == "localhost" || ;
-                        // clients[client_fd]->req.config = ;
-                        Response res = clients[client_fd]->req.execute_request();
-                        std::vector<char> response_binary = res.get_response();
-                        send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
-                        send(client_fd, "\r\n", 2, 0);
+                        clients[client_fd]->set_sever_index(get_server_index(clients[client_fd]->get_Host()));
+                        clients[client_fd]->execute();
+                        send(client_fd, &(*clients[client_fd]->get_Res()->get_response().begin()), clients[client_fd]->get_Res()->get_response().size(), 0);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                         delete clients[client_fd];
                         clients.erase(client_fd);

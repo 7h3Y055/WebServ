@@ -224,7 +224,7 @@ void    Request::fill_request(std::vector<char> &buf){
     }
 }
 
-Response Request::execute_request(){
+Response *Request::execute_request(){
     if (is_request_CGI()){
         std::cout << "[CGI]" << std::endl;
         // return CGI_Response();
@@ -243,18 +243,10 @@ Response Request::execute_request(){
     }
 
     return post_Response(*this);
-    // Response *res = new Response(*this);
-    // res->set_status_code(200);
-    // res->set_status_message("OK");
-    // res->set_header("Content-Type", "text/html");
-    // std::string content = "<html><body><CENTER><h1>TEST</h1></CENTER></body></html>";
-    // std::vector<char> body(content.begin(), content.end());
-    // res->set_body(body);
-    // return *res;
 }
 
 
-int Request::request_state(){
+RequestState Request::request_state(){
     return this->_request_state;
 }
 
@@ -262,39 +254,39 @@ bool Request::is_request_CGI(){
     return this->_is_request_CGI;
 }
 
-std::string Request::get_method(){
+std::string &Request::get_method(){
     return this->_Method;
 }
 
-std::string Request::get_version(){
+std::string &Request::get_version(){
     return this->_Version;
 }
 
-std::string Request::get_Host(){
+std::string &Request::get_Host(){
     return this->_Headers["Host"];
 }
 
-std::string Request::get_transfer_mechanism(){
+std::string &Request::get_transfer_mechanism(){
     return this->_Transfer_Mechanism;
 }
 
-long long Request::get_fixed_length(){
+long long &Request::get_fixed_length(){
     return this->_Fixed_length;
 }
 
-std::string Request::get_file_name(){
+std::string &Request::get_file_name(){
     return this->_File_name;
 }
 
-std::string Request::get_URI(){
+std::string &Request::get_URI(){
     return this->_URI;
 }
 
-std::map<std::string, std::string> Request::get_headers(){
+std::map<std::string, std::string> &Request::get_headers(){
     return this->_Headers;
 }
 
-std::string Request::get_header(std::string key){
+std::string &Request::get_header(std::string key){
     return this->_Headers[key];
 }
 

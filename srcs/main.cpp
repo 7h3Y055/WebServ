@@ -1,13 +1,15 @@
 #include "webserv.hpp"
 
+
+
+vector <Serv> servers;
+
+
+
 int main(int ac, char **av)
 {
-    std::vector <Serv> servers;
-    std::string request;
-    Request req;
-
     try{
-        servers = parse_config(ac, av);
+        parse_config(ac, av);
     }
     catch(const std::exception& e){
         std::cerr << e.what() << std::endl;
@@ -20,6 +22,7 @@ int main(int ac, char **av)
 
     try
     {
+        Request req;
         _Run_server(req, fds);
     }
     catch (std::exception &e)

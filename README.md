@@ -1,5 +1,5 @@
 # NOTES:
-1) 
+1) check the directories if exist in config file
 2) 
 3) 
 4) 

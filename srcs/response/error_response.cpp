@@ -6,6 +6,9 @@ std::string get_error_message(int code){
     case 400:
         return "Bad Request";
         break;
+    case 201:
+        return "Created";
+        break;
     case 401:
         return "Unauthorized";
         break;
@@ -59,12 +62,12 @@ std::vector<char> get_error_body(const std::string& filename) {
     return buffer;
 }
 
-Response &createResponse(int code, Request &req){
+Response *createResponse(int code, Request &req){
     Response *res = new Response(req);
     res->set_status_code(code);
     res->set_status_message(get_error_message(code));
     res->set_header("Content-Type", "text/html");
     std::vector<char> body = get_error_body(get_error_path(code, req));
     res->set_body(body);
-    return *res;
+    return res;
 }

@@ -20,7 +20,7 @@ class Serv;
 class Request
 {
     private:
-        int _request_state;
+        RequestState _request_state;
         bool _is_request_CGI;
         int _Host_found;
 
@@ -34,26 +34,30 @@ class Request
         std::string _Host;
         std::map<std::string, std::string> _Headers;
         std::vector<char> _Body;
+        int server_index;
     public:
 
         void fill_request(std::vector<char> &buf);
-        Response execute_request();
+        Response *execute_request();
 
-
-        // Serv config;
-
-        int request_state();
+        RequestState request_state();
         bool is_request_CGI();
-        std::string get_method();
-        std::string get_version();
-        std::string get_file_name();
-        long long get_fixed_length();
-        std::string get_Host();
-        std::string get_URI();
-        std::map<std::string, std::string> get_headers();
-        std::string get_header(std::string key);
+        std::string &get_method();
+        std::string &get_version();
+        std::string &get_file_name();
+        long long &get_fixed_length();
+        std::string &get_Host();
+        std::string &get_URI();
+        std::map<std::string, std::string> &get_headers();
+        std::string &get_header(std::string key);
         std::vector<char> &get_body();
-        std::string get_transfer_mechanism();
+        std::string &get_transfer_mechanism();
+        int get_server_index(){
+            return server_index;
+        }
+        void set_server_index(int i){
+            server_index = i;
+        }
 
 
         Request();
