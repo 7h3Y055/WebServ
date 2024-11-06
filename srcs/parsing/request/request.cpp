@@ -196,12 +196,23 @@ void    Request::fill_request(std::vector<char> &buf){
             }
         }
         if (_request_state == HTTP_BODY){
+            if (_Body_path.size() == 0){
+                _Body_path = "/tmp/" + generate_random_name();
+            }
+            std::ofstream file(_Body_path.c_str(), std::ios::app);
+                if (!file.is_open())
+                    throw 500;
             if (_Transfer_Mechanism == "Fixed"){
                 size_t size = (_Fixed_length < _Buffer.size() ? _Fixed_length : _Buffer.size());
-                _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
+                file.write(&(*_Buffer.begin()),  size); // _Buffer.begin(), _Buffer.begin() + size
+                // _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
                 _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
-                if (_Body.size() == _Fixed_length)
+                std::streampos pos = file.tellp();
+                // std::cout << "[!!!!!!!!!!!!!!!!!!!!!!!!!POS]: " << pos << std::endl;
+                if (pos == _Fixed_length){
+                    file.close();
                     _request_state = HTTP_COMPLETE;
+                }
             }
             else if (_Transfer_Mechanism == "Chunked"){
                 if (chunked_state == false){
@@ -209,19 +220,23 @@ void    Request::fill_request(std::vector<char> &buf){
                     chunked_length = hex2ll(len);
                     if (chunked_length == 0){
                         _request_state = HTTP_COMPLETE;
+                        // _Body.shrink_to_fit();
+                        // _Buffer.shrink_to_fit();
                         return ;
                     }
                     chunked_state = true;
                 }
                 if (chunked_state == true){
                     size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
-                    _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
+                    file.write(&(*_Buffer.begin()),  size); // _Buffer.begin(), _Buffer.begin() + size
+                    // _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
                     _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
                     chunked_state = false;
                 }
             }
         }
     }
+    // _Buffer.shrink_to_fit();
 }
 
 Response *Request::execute_request(){
@@ -235,14 +250,15 @@ Response *Request::execute_request(){
     }
     else if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;
-        return post_Response(*this);
+        return post_Response();
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
         // return delete_Response();
     }
 
-    return post_Response(*this);
+    remove(_Body_path.c_str());
+    return createResponse(404, this);
 }
 
 
@@ -290,8 +306,8 @@ std::string &Request::get_header(std::string key){
     return this->_Headers[key];
 }
 
-std::vector<char> &Request::get_body(){
-    return this->_Body;
+std::string &Request::get_body_path(){
+    return this->_Body_path;
 }
 
 
@@ -306,5 +322,4 @@ Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _
 }
 
 Request::~Request(){
-
 }

@@ -52,29 +52,7 @@ void _Print_req(Request &req)
     if (req.get_transfer_mechanism() == "Fixed")
         std::cout << "Content Length: " << req.get_fixed_length() << std::endl;
     std::cout << "Request State: " << (req.request_state() == 3? "DONE":"NOT DONE") << std::endl;
-    std::cout << "Body: {";
-     for (std::vector<char>::iterator it = req.get_body().begin(); it != req.get_body().end(); ++it) {
-        if (std::isprint(static_cast<unsigned char>(*it))) {
-            std::cout << *it;
-        } else {
-            switch (*it)
-            {
-                case '\n':
-                    std::cout << "\\n";
-                    break;
-                case '\r':
-                    std::cout << "\\r";
-                    break;
-                case '\t':
-                    std::cout << "\\t";
-                    break;
-                default:
-                    std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)(unsigned char)*it;
-                    break;
-            }
-        }
-    }
-    std::cout << "}" << std::endl;
+    std::cout << "Body: { " << req.get_body_path() << "}" << std::endl;
 }
 
 
@@ -141,7 +119,7 @@ void _Run_server(Request &req, std::vector<int> fds)
             {
                 int client_fd = events[i].data.fd;
                 std::cout << "Client data available: " << clients[client_fd]->get_ip() 
-                         << ":" << clients[client_fd]->get_port() << std::endl;
+                         << ":/" << clients[client_fd]->get_port() << std::endl;
                 // remove client
                 if (events[i].events & (EPOLLRDHUP | EPOLLHUP))
                 {
@@ -177,12 +155,15 @@ void _Run_server(Request &req, std::vector<int> fds)
                         std::cout << "-----------------------------------" << std::endl;
                         clients[client_fd]->set_sever_index(get_server_index(clients[client_fd]->get_Host()));
                         clients[client_fd]->execute();
+                        // send it chunked if needed
                         send(client_fd, &(*clients[client_fd]->get_Res()->get_response().begin()), clients[client_fd]->get_Res()->get_response().size(), 0);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                         delete clients[client_fd];
                         clients.erase(client_fd);
                         close(client_fd);
+                        // exit(0);
                     }
+
                 }
                 // usleep(100000);
             }

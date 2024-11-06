@@ -23,4 +23,4 @@ class Response
 };
 
 
-Response *createResponse(int code, Request &req);
+Response *createResponse(int code, Request *req);

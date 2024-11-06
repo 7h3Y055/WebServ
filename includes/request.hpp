@@ -33,12 +33,14 @@ class Request
         std::string _Version;
         std::string _Host;
         std::map<std::string, std::string> _Headers;
-        std::vector<char> _Body;
+        std::string _Body_path;
         int server_index;
     public:
 
         void fill_request(std::vector<char> &buf);
         Response *execute_request();
+
+        Response *post_Response();
 
         RequestState request_state();
         bool is_request_CGI();
@@ -50,7 +52,7 @@ class Request
         std::string &get_URI();
         std::map<std::string, std::string> &get_headers();
         std::string &get_header(std::string key);
-        std::vector<char> &get_body();
+        std::string &get_body_path();
         std::string &get_transfer_mechanism();
         int get_server_index(){
             return server_index;

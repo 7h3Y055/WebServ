@@ -39,7 +39,7 @@ std::string get_error_message(int code){
     }
 }
 
-std::string get_error_path(int code, Request &req){
+std::string get_error_path(int code){
     return "error_pages/404.html";
 }
 
@@ -62,12 +62,13 @@ std::vector<char> get_error_body(const std::string& filename) {
     return buffer;
 }
 
-Response *createResponse(int code, Request &req){
-    Response *res = new Response(req);
+Response *createResponse(int code, Request *req){
+    Response *res = new Response(*req);
     res->set_status_code(code);
     res->set_status_message(get_error_message(code));
     res->set_header("Content-Type", "text/html");
-    std::vector<char> body = get_error_body(get_error_path(code, req));
+    std::vector<char> body = get_error_body(get_error_path(code));
+    // body.shrink_to_fit();
     res->set_body(body);
     return res;
 }
