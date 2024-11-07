@@ -15,5 +15,6 @@ string		to_string(ssize_t nbr);
 void		error_404(Response *res);
 void		error_500(Response *res);
 void		error_204(Response *res);
+void		error_403(Response *res);
 
 #endif
