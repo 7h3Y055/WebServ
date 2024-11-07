@@ -23,4 +23,5 @@ class Response
 };
 
 
-Response &createResponse(int code, Request &req);
+Response *createResponse(int code, Request *req);
+std::string get_error_message(int code);

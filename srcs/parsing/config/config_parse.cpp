@@ -93,7 +93,14 @@ void init_location(location &loc, std::vector<string> &strs)
         if (loc.already_set["redirection"] == "true")
             throw std::runtime_error("Error: duplicate redirection");
         loc.already_set["redirection"] = "true";
-        loc.setRedirection(strs[1]);
+        std::vector<string> redirection = split_string_with_multiple_delemetres(strs[1], "\t\n\v\f\r ");
+        if (redirection.size() != 2 || redirection[0].size() != 3)
+            throw std::runtime_error("Error: invalid redirection");
+        for (size_t i = 0; i < redirection[0].size(); ++i){
+            if (!isdigit(redirection[0][i]))
+                throw std::runtime_error("Error: invalid redirection");
+        }
+        loc.getRedirection()[std::atoi(redirection[0].c_str())] =  redirection[1];
     }
     else{
         throw std::runtime_error("Error: invalid location");
@@ -285,9 +292,19 @@ void add_default_location(Serv &server){
     server.getLocations().push_back(loc);
 }
 
-std::vector<Serv> parse_config(int ac, char **av)
+
+void check_duplacate_locations(Serv &server){
+    for (size_t i = 0; i < server.getLocations().size(); ++i) {
+        for (size_t j = 0; j < server.getLocations().size(); ++j) {
+            if (server.getLocations()[i].getPath() == server.getLocations()[j].getPath() && i != j)
+                throw std::runtime_error("Error: duplicate location");
+        }
+    }
+}
+
+void parse_config(int ac, char **av)
 {
-    std::vector<Serv> servers;
+    // std::vector<Serv> servers;
     std::string config_path;
 
     if (ac == 2)
@@ -319,6 +336,7 @@ std::vector<Serv> parse_config(int ac, char **av)
             if (server.getPort() == 0 || server.getHost() == "" || server.getRoot() == "" || (server.getServerName().size() == 0 && server_n > 1))
                 throw std::runtime_error("Error: invalid server");
             add_default_location(server);
+            check_duplacate_locations(server);
             servers.push_back(server);
             server_n++;
         }
@@ -339,7 +357,7 @@ std::vector<Serv> parse_config(int ac, char **av)
     }
     if (servers.size() == 0)
         throw std::runtime_error("Error: no server");
-    return servers;
+    // return servers;
 }
 
 
@@ -351,7 +369,7 @@ Serv::~Serv()
 {
 }
 
-location::location(): path(""), directory_listing(0), upload_path(""), redirection("")
+location::location(): path(""), directory_listing(0), upload_path("")
 {
 
 }

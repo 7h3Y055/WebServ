@@ -13,7 +13,7 @@ class location
         bool directory_listing;
         std::string upload_path;
         std::vector<std::map<std::string, std::string> > cgi;
-        std::string redirection;
+        std::map<int, std::string> redirection;
     public:
         std::map<std::string, std::string> already_set;
         // Getters
@@ -23,14 +23,14 @@ class location
         bool &getDirectoryListing() { return directory_listing; }
         std::string &getUploadPath() { return upload_path; }
         std::vector<std::map<std::string, std::string> > &getCgi() { return cgi; }
-        std::string &getRedirection() { return redirection; }
+        std::map<int, std::string> &getRedirection() { return redirection; }
 
         // Setters
         void setPath(const std::string &p) { path = p; }
         void setIndex(const std::vector<std::string> &i) { index = i; }
         void setDirectoryListing(int dl) { directory_listing = dl; }
         void setUploadPath(const std::string &up) { upload_path = up; }
-        void setRedirection(const std::string &r) { redirection = r; }
+        // void setRedirection(const int code, const std::string &r) { redirection[code] = r; }
 
         location();
         ~location();
@@ -68,5 +68,5 @@ class Serv
 };
 
 
-std::vector<Serv> parse_config(int ac, char **av);
+void parse_config(int ac, char **av);
 

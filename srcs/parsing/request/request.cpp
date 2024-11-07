@@ -28,25 +28,18 @@ std::pair<std::string, std::string> fill_header(std::string header){
     std::pair<std::string, std::string> pair;
     std::vector<std::string> strs = split_string_with_multiple_delemetres(header, ": \t\r");
     if (header.find(':') == std::string::npos && strs.size() > 1)
-        throw std::runtime_error("Bad Request2");
+        throw 400;
     if (std::isspace(header[header.find(':') - 1]))
-        throw std::runtime_error("Bad Request3");
+        throw 400;
     pair.first = header.substr(0, header.find(':'));
     pair.second = header.substr(header.find(':') + 1, std::string::npos);
     pair.second = pair.second.substr(0, pair.second.find('\r'));
     remove_white_spaces_edges(pair.second);
     if (std::isspace(pair.first[0])){
         std::cout << header << std::endl;
-        throw std::runtime_error("Bad Request4");
+        throw 400;
     }
     return pair;
-}
-
-
-std::string &check_allowed_methods(std::string &method){
-    if (method != "GET" && method != "POST" && method != "DELETE")
-        throw std::runtime_error("Bad Request5");
-    return method;
 }
 
 long long string2ll(std::string str){
@@ -55,17 +48,17 @@ long long string2ll(std::string str){
     try{
         for (size_t i = 0; i < str.size(); i++){
             if (!std::isdigit(str[i]))
-                throw std::runtime_error("Bad Request6");
+                throw 400;
         }
         std::stringstream ss;
         ss << str;
         ss >> length;
         if (ss.fail()) {
-            throw std::runtime_error("Bad Request6");
+            throw 400;
         }
     }
-    catch (std::exception &e){
-        throw std::runtime_error("Bad Request7");
+    catch (...){
+        throw 400;
     }
     return length;
 }
@@ -80,7 +73,7 @@ unsigned long long hex2ll(std::string str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
-            throw std::runtime_error("Bad Request8");
+            throw 400;
         }
     }
     std::stringstream ss;
@@ -88,18 +81,18 @@ unsigned long long hex2ll(std::string str){
     ss >> length;
 
     if (ss.fail())
-        throw std::runtime_error("converting to hex FAILD");
+        throw 400;
 
     return length;
 }
 
 std::string check_URI(std::string URI){
     if (URI[0] != '/')
-        throw std::runtime_error("Invalid request19");
+        throw 400;
     if (URI.size() > 2048)
-        throw std::runtime_error("Invalid request20");
+        throw 414;
     if (URI.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%") != std::string::npos)
-        throw std::runtime_error("Invalid request21");
+        throw 400;
     return URI;
 }
 
@@ -145,14 +138,14 @@ void    Request::fill_request(std::vector<char> &buf){
                 continue;
             std::vector<std::string> strs = split_string_with_multiple_delemetres(line, " \t\r\n");
             if (strs.size() == 3){
-                _Method = check_allowed_methods(strs[0]);
+                _Method = strs[0];
                 _URI = check_URI(strs[1]);
-                _Version = (strs[2] == "HTTP/1.1" ? strs[2] : throw std::runtime_error("Invalid request11"));
+                _Version = (strs[2] == "HTTP/1.1" ? strs[2] : throw 505);
                 _File_name = _URI.substr(0, _URI.find('?'));
                 _is_request_CGI = is_CGI(_File_name);
             }
             else{
-                throw std::runtime_error("Invalid request12");
+                throw 400;
             }
             _request_state = HTTP_HEADER;
         }
@@ -161,11 +154,11 @@ void    Request::fill_request(std::vector<char> &buf){
             line = line.substr(0, line.find("\r\n"));
             if (line.empty()){
                 if (_Host_found != 1){
-                    throw std::runtime_error("Bad Request13");
+                    throw 400;
                 }
                 if (_Method == "POST"){
                     if ((_Headers.find("Content-Length") != _Headers.end()) && (_Headers.find("Transfer-Encoding") != _Headers.end()))
-                        throw std::runtime_error("Bad Request14");
+                        throw 400;
                     if (_Headers.find("Content-Length") != _Headers.end() && !_Headers["Content-Length"].empty()){
                         _Transfer_Mechanism = "Fixed";
                         _Fixed_length = string2ll(_Headers["Content-Length"]);
@@ -174,10 +167,10 @@ void    Request::fill_request(std::vector<char> &buf){
                         if (_Headers["Transfer-Encoding"] == "chunked")
                             _Transfer_Mechanism = "Chunked";
                         else
-                            throw std::runtime_error("Transfer-Encoding not supported");
+                            throw 501;
                     }
                     else
-                        throw std::runtime_error("Bad Request15");
+                        throw 400;
                 }
                 if (_Method != "POST" || (_Transfer_Mechanism == "Fixed" && _Fixed_length == 0)){
                     _request_state = HTTP_COMPLETE;
@@ -192,39 +185,64 @@ void    Request::fill_request(std::vector<char> &buf){
             if (header.first == "Host"){
                 _Host_found++;
                 if (header.second.find_first_not_of("\r\n\v\t ") == std::string::npos)// if the Host found but empty
-                    throw std::runtime_error("Bad Request16");
+                    throw 400;
             }
         }
         if (_request_state == HTTP_BODY){
+            if (_Body_path.size() == 0){
+                _Body_path = "/tmp/" + generate_random_name();
+            }
+            std::ofstream file(_Body_path.c_str(), std::ios::app);
+                if (!file.is_open())
+                    throw 500;
             if (_Transfer_Mechanism == "Fixed"){
                 size_t size = (_Fixed_length < _Buffer.size() ? _Fixed_length : _Buffer.size());
-                _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
+                file.write(&(*_Buffer.begin()),  size);
                 _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
-                if (_Body.size() == _Fixed_length)
+                std::streampos pos = file.tellp();
+                if (pos == _Fixed_length){
                     _request_state = HTTP_COMPLETE;
+                }
             }
             else if (_Transfer_Mechanism == "Chunked"){
                 if (chunked_state == false){
                     std::string len = get_http_line(&_Buffer);
                     chunked_length = hex2ll(len);
+                    chunked_state = true;
                     if (chunked_length == 0){
                         _request_state = HTTP_COMPLETE;
-                        return ;
+                        chunked_state = false;
                     }
-                    chunked_state = true;
                 }
                 if (chunked_state == true){
                     size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
-                    _Body.insert(_Body.end(), _Buffer.begin(), _Buffer.begin() + size);
+                    file.write(&(*_Buffer.begin()),  size);
                     _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
                     chunked_state = false;
                 }
             }
+            if (file.tellp() > servers[server_index].getClientMaxBodySize()){
+                std::cout << file.tellp() << std::endl;
+                file.close();
+                throw 413;
+            }
+            file.close();
+
         }
     }
 }
 
-Response Request::execute_request(){
+Response *Request::execute_request(){
+    location loc = get_location(get_file_name(), servers[get_server_index()]);
+
+    size_t i;
+    for (i = 0; i < loc.getMethods().size(); i++)
+        if (loc.getMethods()[i] == _Method)
+            break;
+    if (i == loc.getMethods().size())
+        throw 405;
+    
+
     if (is_request_CGI()){
         std::cout << "[CGI]" << std::endl;
         // return CGI_Response();
@@ -235,26 +253,18 @@ Response Request::execute_request(){
     }
     else if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;
-        return post_Response(*this);
+        return post_Response();
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
         // return delete_Response(*this);
     }
 
-    return post_Response(*this);
-    // Response *res = new Response(*this);
-    // res->set_status_code(200);
-    // res->set_status_message("OK");
-    // res->set_header("Content-Type", "text/html");
-    // std::string content = "<html><body><CENTER><h1>TEST</h1></CENTER></body></html>";
-    // std::vector<char> body(content.begin(), content.end());
-    // res->set_body(body);
-    // return *res;
+    return createResponse(404, this);
 }
 
 
-int Request::request_state(){
+RequestState &Request::request_state(){
     return this->_request_state;
 }
 
@@ -262,44 +272,44 @@ bool Request::is_request_CGI(){
     return this->_is_request_CGI;
 }
 
-std::string Request::get_method(){
+std::string &Request::get_method(){
     return this->_Method;
 }
 
-std::string Request::get_version(){
+std::string &Request::get_version(){
     return this->_Version;
 }
 
-std::string Request::get_Host(){
+std::string &Request::get_Host(){
     return this->_Headers["Host"];
 }
 
-std::string Request::get_transfer_mechanism(){
+std::string &Request::get_transfer_mechanism(){
     return this->_Transfer_Mechanism;
 }
 
-long long Request::get_fixed_length(){
+long long &Request::get_fixed_length(){
     return this->_Fixed_length;
 }
 
-std::string Request::get_file_name(){
+std::string &Request::get_file_name(){
     return this->_File_name;
 }
 
-std::string Request::get_URI(){
+std::string &Request::get_URI(){
     return this->_URI;
 }
 
-std::map<std::string, std::string> Request::get_headers(){
+std::map<std::string, std::string> &Request::get_headers(){
     return this->_Headers;
 }
 
-std::string Request::get_header(std::string key){
+std::string &Request::get_header(std::string key){
     return this->_Headers[key];
 }
 
-std::vector<char> &Request::get_body(){
-    return this->_Body;
+std::string &Request::get_body_path(){
+    return this->_Body_path;
 }
 
 
@@ -314,5 +324,4 @@ Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _
 }
 
 Request::~Request(){
-
 }
