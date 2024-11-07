@@ -33,3 +33,12 @@ void	error_204(Response *res)
 		res->set_body(body);
 }
 
+void	error_403(Response *res)
+{
+		res->set_status_code(403);
+		res->set_status_message("Forbidden");
+		res->set_header("Content-Length", to_string(body.size()));
+		res->set_header("Content-Type", "text/html");
+		res->set_header("Server", "webserv/29.16666666729");
+		res->set_body(body);
+}

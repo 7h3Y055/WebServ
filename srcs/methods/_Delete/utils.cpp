@@ -22,7 +22,7 @@ bool	delete_directory(const char *path) {
     DIR				*dir = NULL;
 
 	if ((dir = opendir(path)) == NULL) 
-		return false;
+		return false; // error_500
     while ((entry = readdir(dir)) != NULL)
 	{
         if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
@@ -31,7 +31,7 @@ bool	delete_directory(const char *path) {
         if (is_source_a_directory(full_path))
             if (delete_directory(full_path.c_str()) == false) return false;
 		if (is_source_a_file(full_path))
-			if (unlink(full_path.c_str()) == -1) return false;
+			if (unlink(full_path.c_str()) == -1) return false; // error_403
     }
     if (closedir(dir) == -1)
 		return false;
