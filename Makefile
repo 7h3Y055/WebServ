@@ -16,8 +16,8 @@ OBJ = $(SRC:.cpp=.o)
 .SILENT:
 
 all: $(NAME)
-	# @clear
-	# @./$(NAME)
+	@clear
+	@./$(NAME)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)

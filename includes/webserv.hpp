@@ -52,4 +52,5 @@ void _Run_server(Request &req, std::vector<int> fds);
 std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters);
 std::string get_extention(Request &req);
 std::string generate_random_name();
-
+Response *createResponse(int code, Request *req);
+location get_location(std::string file_name, Serv &config);

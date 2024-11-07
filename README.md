@@ -2,7 +2,7 @@
 1) check the directories if exist in config file
 2) create chunked with a specific size
 3) if client close connection before the request complate remove the temprary file (buffer file in /tmp)
-4) 
+4) remove temp_
 5) 
 
 

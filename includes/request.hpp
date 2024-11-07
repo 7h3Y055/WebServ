@@ -2,15 +2,13 @@
 
 
 
-#define CLIENT_BODY_SIZE 100000000
-
-
 enum RequestState
 {
     HTTP_REQUEST_LINE,
     HTTP_HEADER,
     HTTP_BODY,
-    HTTP_COMPLETE
+    HTTP_COMPLETE,
+    DONE
 };
 
 class Response;
@@ -42,7 +40,7 @@ class Request
 
         Response *post_Response();
 
-        RequestState request_state();
+        RequestState &request_state();
         bool is_request_CGI();
         std::string &get_method();
         std::string &get_version();

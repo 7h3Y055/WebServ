@@ -149,20 +149,34 @@ void _Run_server(Request &req, std::vector<int> fds)
                     clients[client_fd]->set_bytes_received(clients[client_fd]->get_bytes_received() + ret);
                     char *buffer = clients[client_fd]->get_buffer();
                     std::vector<char> buf(buffer, buffer + ret);
-                    clients[client_fd]->fill_request(buf);
-                    if (clients[client_fd]->get_req_state() == HTTP_COMPLETE)
+
+                    try
                     {
-                        std::cout << "-----------------------------------" << std::endl;
-                        clients[client_fd]->set_sever_index(get_server_index(clients[client_fd]->get_Host()));
-                        clients[client_fd]->execute();
-                        // send it chunked if needed
-                        send(client_fd, &(*clients[client_fd]->get_Res()->get_response().begin()), clients[client_fd]->get_Res()->get_response().size(), 0);
+                        clients[client_fd]->fill_request(buf);
+                        if (clients[client_fd]->get_req_state() == HTTP_COMPLETE)
+                        {
+                            std::cout << "-----------------------------------" << std::endl;
+                            clients[client_fd]->set_sever_index(get_server_index(clients[client_fd]->get_Host()));
+                            clients[client_fd]->execute();
+                            // send it chunked if needed
+                            send(client_fd, &(*clients[client_fd]->get_Res()->get_response().begin()), clients[client_fd]->get_Res()->get_response().size(), 0);
+                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                            delete clients[client_fd];
+                            clients.erase(client_fd);
+                            close(client_fd);
+                        }
+                    }
+                    catch(const int &code)
+                    {
+                        std::cerr << "HTTP code: " << code << " " << get_error_message(code) << '\n';
+                        Response *res = createResponse(code, &clients[client_fd]->get_Req());
+                        send(client_fd, &(*res->get_response().begin()), res->get_response().size(), 0);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                         delete clients[client_fd];
                         clients.erase(client_fd);
                         close(client_fd);
-                        // exit(0);
                     }
+                    
 
                 }
                 // usleep(100000);

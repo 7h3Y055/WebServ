@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-location get_location(std::string file_name, Serv config)
+location get_location(std::string file_name, Serv &config)
 {
     location loc;
     int loc_n = 0;
@@ -52,39 +52,24 @@ int move(std::string src, std::string dst){
 
 
 Response *Request::post_Response(){
-    Response *res = new Response(*this);
     location loc = get_location(get_file_name(), servers[get_server_index()]);
 
-    try
+    if (find(loc.getMethods().begin(), loc.getMethods().end(), "POST") != loc.getMethods().end())
     {
-        if (find(loc.getMethods().begin(), loc.getMethods().end(), "POST") != loc.getMethods().end())
-        {
-            if (loc.getUploadPath().size() != 0){
-                std::string path = servers[this->get_server_index()].getRoot() + "/" + loc.getUploadPath();
-                path = path + "/" + generate_random_name() + get_extention(*this);
-                std::cout << _Body_path << " ==> " << path << std::endl;
-                if (move(_Body_path, path) != 0)
-                    throw 500;
-                // std::ofstream file(path.c_str(), std::ios::binary);
-                // if (!file.is_open())
-                    // throw 500;
-                // file.write(&this->get_body()[0], this->get_body().size());
-                // file.close();
-                throw 201;
-            }
-            else
-                throw 101;
+        if (loc.getUploadPath().size() != 0){
+            std::string path = servers[this->get_server_index()].getRoot() + "/" + loc.getUploadPath();
+            path = path + "/" + generate_random_name() + get_extention(*this);
+            std::cout << " ==> " << path << std::endl;//HERE
+            if (move(_Body_path, path) != 0)
+                throw 500;
         }
         else
-            throw 405;
+            throw 101;
     }
-    catch(const int& code)
-    {
-        return createResponse(code, this);
-    }
+    else
+        throw 405;
 
     return createResponse(201, this);
-    return res;
 }
 
 

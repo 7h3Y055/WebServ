@@ -86,9 +86,13 @@ class Client
         }
         void execute(){
             res = req.execute_request();
+            // req.request_state() = DONE;
         }
         Response *get_Res(){
             return res;
+        }
+        Request &get_Req(){
+            return req;
         }
         int get_server_index(){
             return server_index;
@@ -104,7 +108,7 @@ class Client
             server_index = i;
             req.set_server_index(i);
         }
-        void fill_request(std::vector<char> &buf){
+        void  fill_request(std::vector<char> &buf){
             req.fill_request(buf);
         }
 };
