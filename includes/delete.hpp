@@ -6,7 +6,7 @@
 
 using namespace std;
 
-Response	*delete_Response(Request *req);
+void		delete_Response(Request *req);
 bool		is_source_a_directory(std::string source);
 bool		is_source_a_file(std::string source);
 bool		delete_directory(const char *path);

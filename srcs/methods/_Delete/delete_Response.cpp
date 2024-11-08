@@ -1,6 +1,6 @@
 #include "webserv.hpp"
 
-Response	*delete_Response(Request *req)
+void	delete_Response(Request *req)
 {
 	string source = servers[req->get_server_index()].getRoot() + get_location(req->get_file_name(), servers[req->get_server_index()]).getPath();
 
@@ -13,4 +13,5 @@ Response	*delete_Response(Request *req)
 	}
 	else if (is_source_a_file(source))
 		delete_file(source.c_str());
+	
 }
