@@ -32,7 +32,8 @@ bool	delete_directory(const char *path) {
         if (is_source_a_directory(full_path))
             delete_directory(full_path.c_str());
 		if (is_source_a_file(full_path))
-			delete_file(full_path.c_str());
+			if (unlink(full_path.c_str()) == -1)
+                throw 403; // FORBIDDEN
     }
     if (closedir(dir) == -1)
 		return false;
