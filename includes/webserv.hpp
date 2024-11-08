@@ -35,13 +35,22 @@
 #include "request.hpp"
 #include "Response.hpp"
 #include "config.hpp"
-#include "post.hpp"
+#include "_Get.hpp"
+#include "client.hpp"
 
 using namespace std;
 
 
-std::vector<int> _Create_servers(int nos, int *ports);
-void _Run_server(Request &req, std::vector<int> fds);
+
+extern vector <Serv> servers;
+
+
+
+
+void _Create_Servers();
+void _Run_Server();
 std::vector<std::string> split_string_with_multiple_delemetres(std::string &str, std::string delimiters);
-
-
+std::string get_extention(Request &req);
+std::string generate_random_name();
+Response *createResponse(int code, Request *req);
+location get_location(std::string file_name, Serv &config);

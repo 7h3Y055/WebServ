@@ -6,6 +6,9 @@ std::string get_error_message(int code){
     case 400:
         return "Bad Request";
         break;
+    case 201:
+        return "Created";
+        break;
     case 401:
         return "Unauthorized";
         break;
@@ -36,14 +39,19 @@ std::string get_error_message(int code){
     }
 }
 
-std::string get_error_path(int code, Request &req){
-    return "error_pages/404.html";
+std::string get_error_path(int code){
+    if (!(code < 999 && code > 0))
+        throw 500;
+    string str;
+    stringstream ss;
+    ss << code;
+    return "error_pages/" + ss.str() +".html";
 }
 
 std::vector<char> get_error_body(const std::string& filename) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        throw std::runtime_error("Cannot open file: " + filename);
+        throw 500;
     }
 
     // Get file size
@@ -53,18 +61,18 @@ std::vector<char> get_error_body(const std::string& filename) {
     // Read the file content into a vector
     std::vector<char> buffer(size);
     if (!file.read(buffer.data(), size)) {
-        throw std::runtime_error("Failed to read file: " + filename);
+        throw 500;
     }
 
     return buffer;
 }
 
-Response &createResponse(int code, Request &req){
-    Response *res = new Response(req);
+Response *createResponse(int code, Request *req){
+    Response *res = new Response(*req);
     res->set_status_code(code);
     res->set_status_message(get_error_message(code));
     res->set_header("Content-Type", "text/html");
-    std::vector<char> body = get_error_body(get_error_path(code, req));
+    std::vector<char> body = get_error_body(get_error_path(code));
     res->set_body(body);
-    return *res;
+    return res;
 }
