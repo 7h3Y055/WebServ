@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webserv Developers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 50px;
+            font-size: 2.5em;
+            color: #333;
+        }
+
+        .developer-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .developer {
+            background-color: white;
+            border-radius: 15px;
+            width: 250px;
+            text-align: center;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .developer:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .developer img {
+            width: 100%;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+
+        .developer h3 {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .developer p {
+            color: #555;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+
+        .developer a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+
+        .developer a:hover {
+            color: #0056b3;
+        }
+
+        .tasks {
+            margin: 10px 0;
+        }
+
+        .task {
+            font-size: 1.1em;
+            color: #777;
+            margin-bottom: 5px;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .developer {
+            animation: fadeIn 1s ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Meet the Webserv Developers</h1>
+
+    <div class="developer-container">
+        <!-- Developer 1 -->
+        <div class="developer">
+            <img src="https://cdn.intra.42.fr/users/0f8c07d17ee57f1ce2038ffede8a5051/melfersi.jpeg" alt="Mustapha Elfersioui">
+            <h3>Mustapha Elfersioui</h3>
+            <p><a href="https://profile.intra.42.fr/users/melfersi" target="_blank">Intra Profile</a></p>
+            <p>Student at 1337 Coding School (Child of 42 The Network)</p>
+            <div class="tasks">
+                <div class="task">Tasks:</div>
+                <div class="task">Implement DELETE Method</div>
+                <div class="task">Handle CGI</div>
+            </div>
+            <p><a href="https://github.com/BL4KCY" target="_blank">GitHub</a></p>
+        </div>
+
+        <!-- Developer 2 -->
+        <div class="developer">
+            <img src="https://cdn.intra.42.fr/users/98ab0c91a6680502c175856dd47e1fb7/ybouchma.jpeg" alt="Youssef Bouchmama">
+            <h3>Youssef Bouchmama</h3>
+            <p><a href="https://profile.intra.42.fr/users/ybouchma" target="_blank">Intra Profile</a></p>
+            <p>Student at 1337 Coding School (Child of 42 The Network)</p>
+            <div class="tasks">
+                <div class="task">Tasks:</div>
+                <div class="task">Implement POST Method</div>
+                <div class="task">Parse Config File</div>
+                <div class="task">Parse Request</div>
+            </div>
+            <p><a href="https://github.com/7h3Y055" target="_blank">GitHub</a></p>
+        </div>
+
+        <!-- Developer 3 -->
+        <div class="developer">
+            <img src="https://cdn.intra.42.fr/users/073ce61a5c8de7630a5b6ffddbf748d2/ysaber.jpeg" alt="Youssef Saber">
+            <h3>Youssef Saber</h3>
+            <p><a href="https://profile.intra.42.fr/users/ysaber" target="_blank">Intra Profile</a></p>
+            <p>Student at 1337 Coding School (Child of 42 The Network)</p>
+            <div class="tasks">
+                <div class="task">Tasks:</div>
+                <div class="task">Implement GET Method</div>
+                <div class="task">Create Server</div>
+                <div class="task">Multiplexing</div>
+            </div>
+            <p><a href="https://github.com/ys4ber" target="_blank">GitHub</a></p>
+        </div>
+    </div>
+
+</body>
+</html>
