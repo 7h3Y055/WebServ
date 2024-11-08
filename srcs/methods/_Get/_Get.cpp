@@ -111,7 +111,7 @@ Response &its_a_file_cgi_or_not(Request &req, std::string path, bool is_cgi)
 {
 
     std::cout << "READING THE FILE NORMALLY HHH" << std::endl;
-    if (is_cgi == true)
+    if (is_cgi == true && is_it_a_cgi(path))
     {
         // mustapha dir khedmtek
         return _haha_its_a_cgi(req);
@@ -177,6 +177,16 @@ Response *get_Response(Request &req)
     }
     if (get_resources_type(path) == "directory")
     {
+        std::vector<std::string> index = loc.getIndex();
+        for (size_t i = 0; i < index.size(); i++)
+        {
+            std::string index_path = path + "/" + index[i];
+            if (access(index_path.c_str(), F_OK) == 0)
+            {
+                path = index_path;
+                break;
+            }
+        }
         std::cout << "directory: " << path << std::endl;
         if (!loc.getDirectoryListing())
         {
@@ -202,6 +212,5 @@ Response *get_Response(Request &req)
         res->set_body(body);
         return res;
     }
-
     return &its_a_file_cgi_or_not(req, path, is_cgi);
 }
