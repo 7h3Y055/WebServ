@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webserv Developers</title>
     <style>
+        /* General Styles */
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
@@ -13,6 +14,7 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            transition: background-color 0.3s ease;
         }
 
         h1 {
@@ -91,38 +93,86 @@
             animation: fadeIn 1s ease-in-out;
         }
 
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #333;
+            color: #f5f5f5;
+        }
+
+        .dark-mode .developer {
+            background-color: #444;
+            color: #f5f5f5;
+        }
+        .dark-mode h3 {
+            color: #f5f5f5;
+        }
+
+        .dark-mode p {
+            color: #ccc5c5;
+        }
+
+        .dark-mode .task {
+            color: #777;
+        }
+        .dark-mode h1 {
+            color: #f5f5f5;
+        }
+
+        .dark-mode .developer a {
+            color: #6ad5ff;
+        }
+
+        /* Dark Mode Toggle Button */
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .dark-mode-toggle {
+            color: #f5f5f5;
+        }
     </style>
 </head>
 <body>
 
     <h1>Meet the Webserv Developers</h1>
 
+    <!-- Dark Mode Toggle Button -->
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">☀️</button>
+
     <div class="developer-container">
+        <!-- Developer Profiles -->
         <!-- Developer 1 -->
         <div class="developer">
             <img src="https://cdn.intra.42.fr/users/0f8c07d17ee57f1ce2038ffede8a5051/melfersi.jpeg" alt="Mustapha Elfersioui">
             <h3>Mustapha Elfersioui</h3>
             <p><a href="https://profile.intra.42.fr/users/melfersi" target="_blank">Intra Profile</a></p>
-            <p>Student at 1337 Coding School (Child of 42 The Network)</p>
+            <p>1337 Student</p>
             <div class="tasks">
-                <div class="task">Tasks:</div>
-                <div class="task">Implement DELETE Method</div>
-                <div class="task">Handle CGI</div>
+                <!-- handle the tasks of each developer -->
+                <div class="task">Web Server Tasks</div>
+                <div class="task">CGI, DELETE Method</div>
             </div>
             <p><a href="https://github.com/BL4KCY" target="_blank">GitHub</a></p>
         </div>
-
+        
         <!-- Developer 2 -->
         <div class="developer">
             <img src="https://cdn.intra.42.fr/users/98ab0c91a6680502c175856dd47e1fb7/ybouchma.jpeg" alt="Youssef Bouchmama">
             <h3>Youssef Bouchmama</h3>
             <p><a href="https://profile.intra.42.fr/users/ybouchma" target="_blank">Intra Profile</a></p>
-            <p>Student at 1337 Coding School (Child of 42 The Network)</p>
+            <p>1337 Student</p>
             <div class="tasks">
-                <div class="task">Tasks:</div>
-                <div class="task">Implement POST Method</div>
-                <div class="task">Parse Config File</div>
-                <div class="task">Parse Request</div>
+                <!-- handle the tasks of each developer -->
+                <div class="task">Web Server Tasks</div>
+                <div class="task">HTTP Request & Config file parsing, POST Method</div>
             </div>
             <p><a href="https://github.com/7h3Y055" target="_blank">GitHub</a></p>
         </div>
@@ -132,16 +182,23 @@
             <img src="https://cdn.intra.42.fr/users/073ce61a5c8de7630a5b6ffddbf748d2/ysaber.jpeg" alt="Youssef Saber">
             <h3>Youssef Saber</h3>
             <p><a href="https://profile.intra.42.fr/users/ysaber" target="_blank">Intra Profile</a></p>
-            <p>Student at 1337 Coding School (Child of 42 The Network)</p>
+            <p>1337 Student</p>
             <div class="tasks">
-                <div class="task">Tasks:</div>
-                <div class="task">Implement GET Method</div>
-                <div class="task">Create Server</div>
-                <div class="task">Multiplexing</div>
+                <!-- handle the tasks of each developer -->
+                <div class="task">Web Server Tasks</div>
+                <div class="task">Server creation & Multiplexing, GET Method</div>
             </div>
             <p><a href="https://github.com/ys4ber" target="_blank">GitHub</a></p>
         </div>
     </div>
+
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const toggleButton = document.querySelector('.dark-mode-toggle');
+            toggleButton.textContent = document.body.classList.contains('dark-mode') ? '🌙' : '☀️';
+        }
+    </script>
 
 </body>
 </html>
