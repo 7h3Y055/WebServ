@@ -57,7 +57,7 @@ Response *Request::post_Response(){
     if (find(loc.getMethods().begin(), loc.getMethods().end(), "POST") != loc.getMethods().end())
     {
         if (loc.getUploadPath().size() != 0){
-            std::string path = servers[this->get_server_index()].getRoot() + "/" + loc.getUploadPath();
+            std::string path = loc.getRoot() + "/" + loc.getUploadPath();
             path = path + "/" + generate_random_name() + get_extention(*this);
             std::cout << " ==> " << path << std::endl;//HERE
             if (move(_Body_path, path) != 0)

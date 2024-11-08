@@ -14,6 +14,7 @@ class location
         std::string upload_path;
         std::vector<std::map<std::string, std::string> > cgi;
         std::map<int, std::string> redirection;
+        std::string root;
     public:
         std::map<std::string, std::string> already_set;
         // Getters
@@ -24,12 +25,14 @@ class location
         std::string &getUploadPath() { return upload_path; }
         std::vector<std::map<std::string, std::string> > &getCgi() { return cgi; }
         std::map<int, std::string> &getRedirection() { return redirection; }
+        std::string &getRoot() { return root; }
 
         // Setters
         void setPath(const std::string &p) { path = p; }
         void setIndex(const std::vector<std::string> &i) { index = i; }
         void setDirectoryListing(int dl) { directory_listing = dl; }
         void setUploadPath(const std::string &up) { upload_path = up; }
+        void setRoot(const std::string &r) { root = r; }
         // void setRedirection(const int code, const std::string &r) { redirection[code] = r; }
 
         location();
@@ -56,6 +59,7 @@ class Serv
         int &getPort() { return port; }
         std::string &getHost() { return host; }
         std::vector<std::string> &getServerName() { return server_name; }
+        void setRoot(std::string root) { root = root; }
         std::string &getRoot() { return root; }
         long long getClientMaxBodySize() { return static_cast<long long>(client_max_body_size); }
         std::vector<location> &getLocations() { return locations; }

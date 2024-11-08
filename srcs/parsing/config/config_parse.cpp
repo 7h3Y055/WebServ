@@ -102,6 +102,14 @@ void init_location(location &loc, std::vector<string> &strs)
         }
         loc.getRedirection()[std::atoi(redirection[0].c_str())] =  redirection[1];
     }
+    else if (strs[0] == "root" || strs[0] == "ROOT"){
+        if (loc.already_set["root"] == "true")
+            throw std::runtime_error("Error: duplicate root");
+        loc.already_set["root"] = "true";
+        if (strs.size() != 2)
+            throw std::runtime_error("Error: invalid root");
+        loc.setRoot(strs[1]);
+    }
     else{
         throw std::runtime_error("Error: invalid location");
     }
@@ -158,7 +166,7 @@ void init_server(Serv &server, std::vector<string> &strs){
 
     std::vector<string> server_strs = split_string_with_multiple_delemetres(strs[0], "=");
     if (server_strs.size() != 2)
-        throw std::runtime_error("Error: invalid server");
+        throw std::runtime_error("Error: invalid server3");
     trim(server_strs[0]);
     trim(server_strs[1]);
 
@@ -221,8 +229,13 @@ void init_server(Serv &server, std::vector<string> &strs){
         server.getErrorPages()[error_page[0]] = error_page[1];
     }
     else{
-        throw std::runtime_error("Error: invalid server");
+        throw std::runtime_error("Error: invalid server4");
     }
+}
+
+void add_default_root(location &loc, std::string root){
+    if (loc.getRoot() == "")
+        loc.setRoot(root);
 }
 
 void read_server(std::ifstream &file, size_t &line_n, Serv &server)
@@ -243,6 +256,7 @@ void read_server(std::ifstream &file, size_t &line_n, Serv &server)
                 throw std::runtime_error("Error: invalid location");
             location loc;
             loc.setPath(strs[1]);
+            add_default_root(loc, server.getRoot());
             read_location(file, line_n, loc);
             server.getLocations().push_back(loc);
         }
@@ -252,7 +266,7 @@ void read_server(std::ifstream &file, size_t &line_n, Serv &server)
         
         line_n++;
     }
-    throw std::runtime_error("Error: invalid server");
+    throw std::runtime_error("Error: invalid server1");
 }
 
 void set_default_error_pages(Serv &server){
@@ -334,7 +348,7 @@ void parse_config(int ac, char **av)
             read_server(file, line_n, server);
             set_default_error_pages(server);
             if (server.getPort() == 0 || server.getHost() == "" || server.getRoot() == "" || (server.getServerName().size() == 0 && server_n > 1))
-                throw std::runtime_error("Error: invalid server");
+                throw std::runtime_error("Error: invalid server2");
             add_default_location(server);
             check_duplacate_locations(server);
             servers.push_back(server);

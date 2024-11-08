@@ -19,6 +19,8 @@ OBJ = $(SRC:.cpp=.o)
 # .SILENT:
 
 all: $(NAME)
+	# @clear
+	# @./$(NAME)
 	@./$(NAME)
 
 $(NAME): $(OBJ)
