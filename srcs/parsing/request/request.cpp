@@ -260,7 +260,7 @@ Response *Request::execute_request(){
     }
     else if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;
-        return post_Response();
+        // return post_Response();
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
