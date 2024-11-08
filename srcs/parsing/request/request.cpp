@@ -257,7 +257,7 @@ Response *Request::execute_request(){
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
-        // return delete_Response(*this);
+        delete_Response(this);
     }
 
     return createResponse(404, this);
