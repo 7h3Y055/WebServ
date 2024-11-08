@@ -87,104 +87,121 @@ location find_best_location(std::vector<location> locations, std::string uri)
     return best_location;
 }
 
+Response &_haha_its_a_cgi(Request &req)
+{
+    Response *res = new Response(req);
+    res->set_status_code(200);
+    res->set_status_message("OK");
+    res->set_header("Content-Type", "text/html");
+    std::string content = "<html><body><h1>from cgi file hahahahaha </h1></body></html>";
+    std::vector<char> body(content.begin(), content.end());
+    res->set_body(body);
+    return *res;
+}
+
+bool is_it_a_cgi(std::string path)
+{
+    std::string ext = path.substr(path.find_last_of('.'));
+    if (ext == ".php" || ext == ".py" || ext == ".pl")
+        return true;
+    return false;
+}
+
+Response &its_a_file_cgi_or_not(Request &req, std::string path, bool is_cgi)
+{
+
+    std::cout << "READING THE FILE NORMALLY HHH" << std::endl;
+    if (is_cgi == true)
+    {
+        // mustapha dir khedmtek
+        return _haha_its_a_cgi(req);
+    }
+    else
+    {
+        size_t pos = path.find_last_of('.');
+        std::string key;
+        if(pos != std::string::npos)
+            key = fill_exts(path.substr(pos));
+        else
+            key = "text/plain";
+        Response *res = new Response(req);
+        res->set_status_code(200);
+        res->set_status_message("OK");
+        res->set_header("Content-Type", key);
+        std::ifstream file(path.c_str(), std::ios::binary);
+        std::vector<char> body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        res->set_body(body);
+        return *res;
+    }
+    return default_res(req);
+}
+
+std::vector<std::string> get_directory_content(std::string path)
+{
+    std::vector<std::string> directory_content;
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir(path.c_str())) != NULL)
+    {
+        while ((ent = readdir(dir)) != NULL)
+        {
+            std::string file_name = ent->d_name;
+            if (file_name != "." && file_name != "..")
+            {
+                directory_content.push_back(file_name);
+            }
+        }
+        closedir(dir);
+    }
+    else
+    {
+        throw 403;
+    }
+    return directory_content;
+}
+
 Response *get_Response(Request &req)
 {
+    bool is_cgi = false;
     std::string resources = req.get_URI();
-
-    std::string root = servers[req.get_server_index()].getRoot();
-
-    // std::cout << "this is root == " << root << std::endl;
-
-    resources = root + resources;
-
-    std::cout << "this is resources == " << resources << std::endl;
-
-    if (access(resources.c_str(), F_OK) == -1)
+    location loc = find_best_location(servers[req.get_server_index()].getLocations(), resources);
+    std::string root = loc.getRoot();
+    if (loc.getCgi().size() > 0)
+        is_cgi = true;
+    std::string path = root + resources;
+    std::cout << "this is the path of the requested file hhhh == " << path << std::endl;
+    if (access(path.c_str(), F_OK) == -1)
     {
-        Response *res = new Response(req);
-        res->set_status_code(404);
-        res->set_status_message("Not Found");
-        res->set_header("Content-Type", "text/html");
-        std::string content = "<html><body><h1>404 Not Found 🐧 </h1></body></html>";
-        std::vector<char> body(content.begin(), content.end());
-        res->set_body(body);
-        return res;
+        std::cout << "heeeeeere ==  " << path << std::endl;
+        throw 403;
     }
-    if (get_resources_type(resources) == "directory")
+    if (get_resources_type(path) == "directory")
     {
+        std::cout << "directory: " << path << std::endl;
+        if (!loc.getDirectoryListing())
+        {
+            throw 403;
+        }
+        std::vector<std::string> directory_content = get_directory_content(path);
+        if (access(path.c_str(), R_OK) == -1)
+        {
+            std::cout << "permissions denied of directory listing hhhh" << std::endl;
+            throw 403;
+        }
         Response *res = new Response(req);
         res->set_status_code(200);
         res->set_status_message("OK");
         res->set_header("Content-Type", "text/html");
-        std::string content = "<html><body><h1>This is a directory 🐧 </h1></body></html>";
+        std::string content = "<html><body><h1>This is a directory 🐧 </h1></body></html>""<ul>";
+        for (size_t i = 0; i < directory_content.size(); i++)
+        {
+            content += "<li><a href=\"" + directory_content[i] + "\">" + directory_content[i] + "</a></li>";
+        }
+        content += "</ul>";
         std::vector<char> body(content.begin(), content.end());
         res->set_body(body);
         return res;
     }
-    else
-    {
-        bool is_cgi = false;
-        std::vector<location> locations = servers[req.get_server_index()].getLocations();
-        location loc = find_best_location(locations, req.get_URI());
-        if (loc.getCgi().size() > 0)
-        {
-            is_cgi = true;
-        }
 
-        std::cout << "this is resources " << resources << std::endl;
-
-
-        
-
-    }
-
-    return &default_res(req);
+    return &its_a_file_cgi_or_not(req, path, is_cgi);
 }
-
-
-
-
-
-
-/*
-
-
-
-        for (int i = 0; i < loc.getCgi().size(); i++)
-        {
-            std::cout << "this is cgi == " << loc.getCgi()[i]["extension"] << std::endl;
-        }
-
-
-        std::cout << "this is location is cgi == " << is_cgi << std::endl;
-        std::cout << "this is loc path == " << loc.getPath() << std::endl;
-
-        for (size_t i = 0; i < loc.getMethods().size(); i++)
-        {
-            if (loc.getMethods()[i] == req.get_method())
-            {
-                Response *res = new Response(req);
-                res->set_status_code(200);
-                res->set_status_message("OK");
-                res->set_header("Content-Type", fill_exts(resources.substr(resources.find_last_of('.'))));
-                std::ifstream file(resources.c_str(), std::ios::binary);
-                std::vector<char> body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-                res->set_body(body);
-                return res;
-            }
-            if (i == loc.getMethods().size() - 1 && loc.getMethods()[i] != req.get_method())
-            {
-                Response *res = new Response(req);
-                res->set_status_code(405);
-                res->set_status_message("Method Not Allowed");
-                res->set_header("Content-Type", "text/html");
-                std::string content = "<html><body><h1>405 Method Not Allowed 🐧 </h1></body></html>";
-                std::vector<char> body(content.begin(), content.end());
-                res->set_body(body);
-                return res;
-            }
-        }
-
-
-
-*/
