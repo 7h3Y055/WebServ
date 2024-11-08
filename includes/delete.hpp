@@ -6,15 +6,16 @@
 
 using namespace std;
 
+typedef enum
+{
+	REGULAR_FILE,
+	DIRECTORY,
+}	file_t;
+
 void		delete_Response(Request *req);
-bool		is_source_a_directory(std::string source);
-bool		is_source_a_file(std::string source);
+file_t		file_type(std::string source);
 bool		delete_directory(const char *path);
 void		delete_file(const char *path);
 string		to_string(ssize_t nbr);
-void		error_404(Response *res);
-void		error_500(Response *res);
-void		error_204(Response *res);
-void		error_403(Response *res);
 
 #endif
