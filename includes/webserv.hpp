@@ -36,6 +36,7 @@
 #include "Response.hpp"
 #include "config.hpp"
 #include "post.hpp"
+#include "delete.hpp"
 #include "client.hpp"
 
 using namespace std;

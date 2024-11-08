@@ -10,7 +10,7 @@ Response	*delete_Response(Request *req);
 bool		is_source_a_directory(std::string source);
 bool		is_source_a_file(std::string source);
 bool		delete_directory(const char *path);
-bool		delete_file(const char *path);
+void		delete_file(const char *path);
 string		to_string(ssize_t nbr);
 void		error_404(Response *res);
 void		error_500(Response *res);
