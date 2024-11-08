@@ -17,33 +17,34 @@ bool    is_source_a_file(std::string source)
 }
 
 bool	delete_directory(const char *path) {
+    
     struct dirent	*entry;
 	std::string		full_path;
     DIR				*dir = NULL;
 
 	if ((dir = opendir(path)) == NULL) 
-		return false; // error_500
+		throw 500; // error_500
     while ((entry = readdir(dir)) != NULL)
 	{
         if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
             continue;
         full_path = string(path) + "/" + entry->d_name;
         if (is_source_a_directory(full_path))
-            if (delete_directory(full_path.c_str()) == false) return false;
+            delete_directory(full_path.c_str());
 		if (is_source_a_file(full_path))
-			if (unlink(full_path.c_str()) == -1) return false; // error_403
+			delete_file(full_path.c_str());
     }
     if (closedir(dir) == -1)
 		return false;
 	if (rmdir(path) == -1)
-		return false;
+		throw 403; // FORBIDDEN
 	return true;
 }
 
-bool	delete_file(const char *path) {
+void    delete_file(const char *path) {
 	if (unlink(path) == -1)
-		return false;
-	return true;
+		throw 403; // FORBIDDEN
+	throw 204; // No Conten
 }
 
 string  to_string(ssize_t nbr)

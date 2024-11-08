@@ -2,16 +2,15 @@
 
 Response	*delete_Response(Request *req)
 {
-	Response *res = new Response(*req);
-	// get_request_source(req);
+	string source = servers[req->get_server_index()].getRoot() + get_location(req->get_file_name(), servers[req->get_server_index()]).getPath();
 
-	string source = req->get_file_name();
-	cout << source << endl;
 	if (access(source.c_str(), F_OK) == -1)
-		return error_404(res), res;
+		throw 404;
 	if (is_source_a_directory(source))
-		return delete_directory(source.c_str()) ? error_204(res) : error_500(res), res;
-	if (is_source_a_file(source))
-		return delete_file(source.c_str()) ? error_204(res) : error_403(res), res;
-	return res;
+	{
+		if (delete_directory(source.c_str()))
+			throw 204; // No Content
+	}
+	else if (is_source_a_file(source))
+		delete_file(source.c_str());
 }
