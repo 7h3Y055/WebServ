@@ -96,6 +96,18 @@ int get_server_index(int fd)
     return -1;
 }
 
+
+struct Data
+{
+    int fd;
+    Request req;
+    std::ifstream file_stream;
+    size_t file_offset;
+    bool sending_file;
+    // Other members...
+};
+
+
 void _Run_Server()
 {
     int epoll_fd = epoll_create1(0);
@@ -189,27 +201,31 @@ void _Run_Server()
                     clients[client_fd]->set_read_pos(clients[client_fd]->get_read_pos() + ret);
                     char *buffer = clients[client_fd]->get_buffer();
                     std::vector<char> buf(buffer, buffer + ret);
-
-
-
+                    clients[client_fd]->req.fill_request(buf);
+                }
+                else if (events[i].events & EPOLLOUT && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
+                {
                     try
                     {
-                        clients[client_fd]->req.fill_request(buf);
-                        // std::cout <<" server index == " << clients[client_fd]->get_server_index() << std::endl;
-                        if (clients[client_fd]->req.request_state() == HTTP_COMPLETE)
+                        Response *res = clients[client_fd]->req.execute_request();
+                        std::vector<char> response_binary = res->get_response();
+                        size_t start = 0;
+                        size_t end = 0;
+                        while (start < response_binary.size())
                         {
-                            std::cout << "-----------------------------------" << std::endl;
-                            Response *res = clients[client_fd]->req.execute_request();
-                            std::vector<char> response_binary = res->get_response();
-                            send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
-                            send(client_fd, "\r\n", 2, 0);
-                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                            delete clients[client_fd];
-                            clients.erase(client_fd);
-                            close(client_fd);
-                            // clients_response.push_back(client_fd);
-                            // std::cout << "client == " << client_fd << " is ready to send response" << std::endl;
+                            end = start + 1024;
+                            if (end > response_binary.size())
+                                end = response_binary.size();
+                            send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
+                            start = end;
                         }
+                        // send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
+                        // send(client_fd, "\r\n", 2, 0);
+
+                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                        delete clients[client_fd];
+                        clients.erase(client_fd);
+                        close(client_fd);
                     }
                     catch(const int &code)
                     {
@@ -222,20 +238,7 @@ void _Run_Server()
                         close(client_fd);
                     }
                 }
-                // else if (events[i].events & EPOLLOUT)
-                // {
-                //     std::cout << "sending response to client == " << client_fd << std::endl;
-                //     Response *res = clients[client_fd]->req.execute_request();
-                //     std::vector<char> response_binary = res->get_response();
-                //     send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
-                //     send(client_fd, "\r\n", 2, 0);  
-                //     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                //     delete clients[client_fd];
-                //     clients.erase(client_fd);
-                //     close(client_fd);
-
-                // }
             }
-        } // for looping through events
-    } // while
+        }
+    }
 }
