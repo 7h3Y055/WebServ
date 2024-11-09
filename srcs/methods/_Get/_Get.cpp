@@ -101,11 +101,19 @@ Response &_haha_its_a_cgi(Request &req)
 
 bool is_it_a_cgi(std::string path)
 {
+    size_t pos = path.find_last_of('.');
+    if (pos == std::string::npos)
+        return false;
     std::string ext = path.substr(path.find_last_of('.'));
     if (ext == ".php" || ext == ".py" || ext == ".pl")
         return true;
     return false;
 }
+
+
+/*
+
+*/
 
 Response &its_a_file_cgi_or_not(Request &req, std::string path, bool is_cgi)
 {
@@ -118,6 +126,7 @@ Response &its_a_file_cgi_or_not(Request &req, std::string path, bool is_cgi)
     }
     else
     {
+
         size_t pos = path.find_last_of('.');
         std::string key;
         if(pos != std::string::npos)
@@ -138,6 +147,7 @@ Response &its_a_file_cgi_or_not(Request &req, std::string path, bool is_cgi)
 
 std::vector<std::string> get_directory_content(std::string path)
 {
+    std::cout << "this is path in the directory content == " << path << std::endl;
     std::vector<std::string> directory_content;
     DIR *dir;
     struct dirent *ent;
@@ -155,6 +165,7 @@ std::vector<std::string> get_directory_content(std::string path)
     }
     else
     {
+        std::cout << "could not open directory" << std::endl;
         throw 403;
     }
     return directory_content;
@@ -172,24 +183,25 @@ Response *get_Response(Request &req)
     std::cout << "this is the path of the requested file hhhh == " << path << std::endl;
     if (access(path.c_str(), F_OK) == -1)
     {
-        std::cout << "heeeeeere ==  " << path << std::endl;
+        std::cout << "have no access == " << path << std::endl;
         throw 403;
+    }
+    std::vector<std::string> index = loc.getIndex();
+    for (size_t i = 0; i < index.size(); i++)
+    {
+        std::string index_path = path + "/" + index[i];
+        if (access(index_path.c_str(), F_OK) == 0)
+        {
+            path = index_path;
+            break;
+        }
     }
     if (get_resources_type(path) == "directory")
     {
-        std::vector<std::string> index = loc.getIndex();
-        for (size_t i = 0; i < index.size(); i++)
-        {
-            std::string index_path = path + "/" + index[i];
-            if (access(index_path.c_str(), F_OK) == 0)
-            {
-                path = index_path;
-                break;
-            }
-        }
         std::cout << "directory: " << path << std::endl;
         if (!loc.getDirectoryListing())
         {
+            std::cout << "dierctory listing is not allowed" << std::endl;
             throw 403;
         }
         std::vector<std::string> directory_content = get_directory_content(path);
