@@ -12,7 +12,7 @@ SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
 
 INC = -Iincludes
 
-CONFIG_FILE = conf/config.conf
+CONFIG_FILE = conf/default.conf
 
 OBJ = $(SRC:.cpp=.o)
 
