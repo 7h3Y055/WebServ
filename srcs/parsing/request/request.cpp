@@ -128,7 +128,7 @@ void    Request::fill_request(std::vector<char> &buf){
     _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
     std::string line;
     bool chunked_state = false;
-    unsigned long long chunked_length;
+    static unsigned long long chunked_length;
     
     while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
     {
@@ -205,28 +205,24 @@ void    Request::fill_request(std::vector<char> &buf){
                 }
             }
             else if (_Transfer_Mechanism == "Chunked"){
-                std::cout << "[!]chunked have a problem!" << std::endl;
-                exit(0);
-                // if (chunked_state == false){
-                //     std::string len = get_http_line(&_Buffer);
-                //     std::cout << "len: " << len.size() << std::endl;
-                //     chunked_length = hex2ll(len);
-                //     chunked_state = true;
-                //     if (chunked_length == 0){
-                //         _request_state = HTTP_COMPLETE;
-                //         chunked_state = false;
-                //     }
-                // }
-                // if (chunked_state == true){
-                //     size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
-                //     file.write(&(*_Buffer.begin()),  size);
-                //     cout << "chunked_len: " << chunked_length << " | " << "size: " << size << endl;
-                //     _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
-                //     if (chunked_length <= size)
-                //         chunked_state = false;
-                //     // exit(0);
-                //     // cout << 2 << endl;
-                // }
+                if (chunked_length == 0){
+                    std::string len = get_http_line(&_Buffer);
+                    chunked_length = hex2ll(len);
+                    cout << "chunked_length: " << len << " | " << chunked_length << endl;
+                    if (chunked_length == 0){
+                        _request_state = HTTP_COMPLETE;
+                    }
+                }
+                if (chunked_length > 0){
+                    size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
+                    file.write(&(*_Buffer.begin()),  size);
+                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size - 1);
+                    chunked_length -= (size - 2);
+                    string str(_Buffer.begin(), _Buffer.end());
+                    cout << "BUFFER: [" << chunked_length <<"]"  << endl;
+                    if (chunked_length == 18446744073709551614)
+                        exit(0);
+                }
             }
             if (file.tellp() > servers[server_index].getClientMaxBodySize()){
                 std::cout << file.tellp() << std::endl;
