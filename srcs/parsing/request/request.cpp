@@ -73,7 +73,7 @@ unsigned long long hex2ll(std::string str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
-            throw 400;
+            throw 400; // HERE 
         }
     }
     std::stringstream ss;
@@ -205,21 +205,28 @@ void    Request::fill_request(std::vector<char> &buf){
                 }
             }
             else if (_Transfer_Mechanism == "Chunked"){
-                if (chunked_state == false){
-                    std::string len = get_http_line(&_Buffer);
-                    chunked_length = hex2ll(len);
-                    chunked_state = true;
-                    if (chunked_length == 0){
-                        _request_state = HTTP_COMPLETE;
-                        chunked_state = false;
-                    }
-                }
-                if (chunked_state == true){
-                    size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
-                    file.write(&(*_Buffer.begin()),  size);
-                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
-                    chunked_state = false;
-                }
+                std::cout << "[!]chunked have a problem!" << std::endl;
+                exit(0);
+                // if (chunked_state == false){
+                //     std::string len = get_http_line(&_Buffer);
+                //     std::cout << "len: " << len.size() << std::endl;
+                //     chunked_length = hex2ll(len);
+                //     chunked_state = true;
+                //     if (chunked_length == 0){
+                //         _request_state = HTTP_COMPLETE;
+                //         chunked_state = false;
+                //     }
+                // }
+                // if (chunked_state == true){
+                //     size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
+                //     file.write(&(*_Buffer.begin()),  size);
+                //     cout << "chunked_len: " << chunked_length << " | " << "size: " << size << endl;
+                //     _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
+                //     if (chunked_length <= size)
+                //         chunked_state = false;
+                //     // exit(0);
+                //     // cout << 2 << endl;
+                // }
             }
             if (file.tellp() > servers[server_index].getClientMaxBodySize()){
                 std::cout << file.tellp() << std::endl;
@@ -249,7 +256,7 @@ Response *Request::execute_request(){
     }
     else if (_Method == "GET"){
         std::cout << "[GET]" << std::endl;
-        // return get_Response();
+        return get_Response(*this);
     }
     else if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;

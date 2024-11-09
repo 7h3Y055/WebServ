@@ -2,10 +2,8 @@
 
 #include "webserv.hpp"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2048
 #define MAX_EVENTS 10
-
-
 
 class Client
 {
@@ -24,10 +22,10 @@ class Client
         RequestState _state;
 
         int server_index;
-        Request req;
-        Response *res;
+        int server_fd;
+        
     public:
-        Client(int fd, struct sockaddr_in address)
+        Client(int fd, struct sockaddr_in address, int index)
         {
             _fd = fd;
             _address = address;
@@ -38,6 +36,8 @@ class Client
             _bytes_received = 0;
             _bytes_sent = 0;
             _state = HTTP_REQUEST_LINE;
+            server_index = index;
+            req.set_server_index(index);
         }
         ~Client() {
             close(_fd);
@@ -86,29 +86,45 @@ class Client
         }
         void execute(){
             res = req.execute_request();
-            // req.request_state() = DONE;
         }
-        Response *get_Res(){
-            return res;
-        }
-        Request &get_Req(){
-            return req;
-        }
+        
         int get_server_index(){
             return server_index;
         }
         std::string &get_Host(){
             return req.get_Host();
         }
-        RequestState get_req_state(){
-            return req.request_state();
-        }
+        // RequestState get_req_state(){
+        //     return req.request_state();
+        // }
 
-        void set_sever_index(int i){
+
+        // no need for setters and getter for req and res !!
+
+        Request req;
+        Response *res;
+
+        void set_server_index(int i){
             server_index = i;
             req.set_server_index(i);
         }
-        void  fill_request(std::vector<char> &buf){
+
+        void fill_request(std::vector<char> &buf){
             req.fill_request(buf);
         }
+
+        void set_server_fd(int fd){
+            server_fd = fd;
+        }
+        int get_server_fd(){
+            return server_fd;
+        }
+
+        Request &get_req(){
+            return req;
+        }
+        Response *get_Res(){
+            return res;
+        }
+
 };

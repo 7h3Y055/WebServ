@@ -12,7 +12,7 @@ class location
         std::vector<std::string> index;
         bool directory_listing;
         std::string upload_path;
-        std::map<std::string, std::string> cgi;
+        std::vector<std::map<std::string, std::string> > cgi;
         std::map<int, std::string> redirection;
         std::string root;
     public:
@@ -23,7 +23,7 @@ class location
         std::vector<std::string> &getIndex() { return index; }
         bool &getDirectoryListing() { return directory_listing; }
         std::string &getUploadPath() { return upload_path; }
-        std::map<std::string, std::string> &getCgi() { return cgi; }
+        std::vector<std::map<std::string, std::string> > &getCgi() { return cgi; }
         std::map<int, std::string> &getRedirection() { return redirection; }
         std::string &getRoot() { return root; }
 
@@ -45,6 +45,7 @@ class location
 class Serv
 {
     private:
+        int fd;
         int port;
         std::string host;
         std::vector<std::string> server_name;
@@ -67,8 +68,12 @@ class Serv
 
         void setClienMaxBodySize(double n) { client_max_body_size = n; }
 
+        int getFd() { return fd; }
+        void setFd(int n) { fd = n; }
         Serv();
         ~Serv();
+        
+        struct sockaddr_in addr;
 };
 
 
