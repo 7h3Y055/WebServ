@@ -17,7 +17,7 @@ OBJ = $(SRC:.cpp=.o)
 
 all: $(NAME)
 	# @clear
-	@./$(NAME)
+	@./$(NAME) | cat -e
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)

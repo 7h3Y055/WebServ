@@ -1,8 +1,8 @@
 # NOTES:
-1) 
-2) 
-3) 
-4) 
+1) check directories in Config file
+2) remove temp_ in name new resource
+3) check CGI
+4) Problem in chunked mechanisms
 5) 
 
 

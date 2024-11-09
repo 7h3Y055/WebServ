@@ -2,7 +2,8 @@
 
 #include "webserv.hpp"
 
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 4096
+// #define BUFFER_SIZE 2048
 #define MAX_EVENTS 10
 
 class Client

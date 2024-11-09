@@ -73,15 +73,18 @@ unsigned long long hex2ll(std::string str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
-            throw 400; // HERE 
+        cout << "111111111: " << endl;
+            throw 400;
         }
     }
     std::stringstream ss;
     ss << std::hex << str;
     ss >> length;
 
-    if (ss.fail())
-        throw 400;
+    if (ss.fail()){
+        cout << "111111111: " << endl;
+        throw 400; // HERE 
+    }
 
     return length;
 }
@@ -207,25 +210,23 @@ void    Request::fill_request(std::vector<char> &buf){
             else if (_Transfer_Mechanism == "Chunked"){
                 if (chunked_length == 0){
                     std::string len = get_http_line(&_Buffer);
+                    // cout << len << endl;
                     chunked_length = hex2ll(len);
-                    cout << "chunked_length: " << len << " | " << chunked_length << endl;
+                    // cout << chunked_length << endl;
                     if (chunked_length == 0){
                         _request_state = HTTP_COMPLETE;
                     }
+                    // cout << "size: " << size << endl;
                 }
                 if (chunked_length > 0){
-                    size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
+                    size_t size = (chunked_length < _Buffer.size() ? chunked_length : _Buffer.size());
                     file.write(&(*_Buffer.begin()),  size);
-                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size - 1);
-                    chunked_length -= (size - 2);
-                    string str(_Buffer.begin(), _Buffer.end());
-                    cout << "BUFFER: [" << chunked_length <<"]"  << endl;
-                    if (chunked_length == 18446744073709551614)
-                        exit(0);
+                    // cout << string(_Buffer.begin() + size - 5, _Buffer.begin() + size + 5) << endl;
+                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size + (chunked_length < _Buffer.size() ? 2 : 0));
+                    chunked_length -= size;
                 }
             }
             if (file.tellp() > servers[server_index].getClientMaxBodySize()){
-                std::cout << file.tellp() << std::endl;
                 file.close();
                 throw 413;
             }
