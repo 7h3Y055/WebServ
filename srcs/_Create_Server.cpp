@@ -105,6 +105,7 @@ void _Run_Server()
     struct epoll_event events[MAX_EVENTS];
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
+    
     for (int i = 0; i < servers.size(); i++)
     {
         event.events = EPOLLIN;
@@ -112,13 +113,15 @@ void _Run_Server()
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, servers[i].getFd(), &event) == -1)
             throw std::runtime_error("epoll_ctl failed");
     }
+
     std::map<int, Client *> clients;
     std::vector<int> fds;
-    for (int i = 0; i < servers.size(); i++)
-    {
-        fds.push_back(servers[i].getFd());
-    }
+
+    for (int i = 0; i < servers.size(); i++) {
+        fds.push_back(servers[i].getFd()); }
+
     std::vector<int> clients_response;
+
     while (true)
     {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
@@ -172,8 +175,6 @@ void _Run_Server()
                 if (events[i].events & EPOLLIN )
                 {
                     int ret = recv(client_fd, clients[client_fd]->get_buffer(), BUFFER_SIZE, 0);
-                    // int ret = recv(client_fd, clients[client_fd]->get_buffer() + clients[client_fd]->get_read_pos(),
-                    //  BUFFER_SIZE - clients[client_fd]->get_read_pos(), 0);
                     if (ret == -1)
                         throw std::runtime_error("recv failed");
                     if (ret == 0)
@@ -220,11 +221,6 @@ void _Run_Server()
                         clients.erase(client_fd);
                         close(client_fd);
                     }
-
-
-
-
-
                 }
                 // else if (events[i].events & EPOLLOUT)
                 // {

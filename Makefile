@@ -20,11 +20,12 @@ OBJ = $(SRC:.cpp=.o)
 
 all: $(NAME)
 	# @clear
-	@./$(NAME)
+	# @./$(NAME)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
 	@echo -e "\033[0;32m[webserv] Compiled\033[0m"
+	@rm -f $(OBJ)
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
