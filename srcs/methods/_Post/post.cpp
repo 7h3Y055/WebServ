@@ -36,18 +36,17 @@ std::string generate_random_name()
 }
 
 
-int move(std::string src, std::string dst){
+void move(std::string src, std::string dst){
     ifstream in(src.c_str());
     ofstream out(dst.c_str(), std::ios::binary);
 
     if (!in.is_open() || !out.is_open())
-        return 0;
+        throw 500;
     out << in.rdbuf();
     in.close();
     out.close();
     if (remove(src.c_str()))
-        return 1;
-    return 0;
+        throw 500;
 }
 
 
@@ -60,8 +59,7 @@ Response *Request::post_Response(){
             std::string path = loc.getRoot() + "/" + loc.getUploadPath();
             path = path + "/" + generate_random_name() + get_extention(*this);
             std::cout << " ==> " << path << std::endl;//HERE
-            if (move(_Body_path, path) != 0)
-                throw 500;
+            move(_Body_path, path);
         }
         else
             throw 101;
