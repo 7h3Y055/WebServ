@@ -84,8 +84,7 @@ void init_location(location &loc, std::vector<string> &strs)
         if (cgi.size() != 2)
             throw std::runtime_error("Error: invalid cgi");
         std::map<std::string, std::string> cgi_map;
-        // cgi_map[cgi[0]] = cgi[1];
-        loc.getCgi()[cgi[0]] = cgi[1];
+        cgi_map[cgi[0]] = cgi[1];
     }
     else if (strs[0] == "redirection" || strs[0] == "REDIRECTION"){
         if (strs.size() != 2)
