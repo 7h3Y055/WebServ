@@ -37,6 +37,7 @@
 #include "config.hpp"
 #include "_Get.hpp"
 #include "client.hpp"
+#include "delete.hpp"
 
 using namespace std;
 
