@@ -107,6 +107,8 @@ struct Data
     // Other members...
 };
 
+#define SEND_BUFFER_SIZE 2048
+
 
 void _Run_Server()
 {
@@ -159,6 +161,7 @@ void _Run_Server()
                     int server_fd = events[i].data.fd;
                     int index = get_server_index(server_fd);
                     Client *client = new Client(client_fd, addr, index);
+                    client->header_flag = false;
                     event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLOUT;
                     event.data.fd = client_fd;
                     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &event) == -1)
@@ -207,25 +210,153 @@ void _Run_Server()
                 {
                     try
                     {
-                        Response *res = clients[client_fd]->req.execute_request();
-                        std::vector<char> response_binary = res->get_response();
-                        size_t start = 0;
-                        size_t end = 0;
-                        while (start < response_binary.size())
+                        if (clients[client_fd]->req.get_method() == "GET")
                         {
-                            end = start + 1024;
-                            if (end > response_binary.size())
-                                end = response_binary.size();
-                            send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
-                            start = end;
+                            bool is_cgi = false;
+                            std::string resources = clients[client_fd]->req.get_URI();
+                            location loc = find_best_location(servers[clients[client_fd]->req.get_server_index()].getLocations(), resources);
+                            std::string root = loc.getRoot();
+                            if (loc.getCgi().size() > 0)
+                                is_cgi = true;
+                            std::string path = root + resources;
+                            if (access(path.c_str(), F_OK) == -1)
+                            {
+                                std::cout << "have no access == " << path << std::endl;
+                                throw 403;
+                            }
+                            std::vector<std::string> index = loc.getIndex();
+                            for (size_t i = 0; i < index.size(); i++)
+                            {
+                                std::string index_path = path + "/" + index[i];
+                                if (access(index_path.c_str(), F_OK) == 0)
+                                {
+                                    path = index_path;
+                                    break;
+                                }
+                            }
+                            if (get_resources_type(path) == "directory")
+                            {
+                                if (!loc.getDirectoryListing())
+                                {
+                                    std::cout << "no directory listing" << std::endl;
+                                    throw 403;
+                                }
+                                std::vector<std::string> directory_content = get_directory_content(path);
+                                if (access(path.c_str(), R_OK) == -1)
+                                {
+                                    std::cout << "permission denied of directory listing" << std::endl;
+                                    throw 403;
+                                }
+                                Response *res = new Response(clients[client_fd]->req);
+                                res->set_status_code(200);
+                                res->set_status_message("OK");
+                                std::string content = "<html><body><h1>Directory listing</h1><ul>";
+                                for (size_t i = 0; i < directory_content.size(); i++)
+                                {
+                                    content += "<li><a href=\"" + directory_content[i] + "\">" + directory_content[i] + "</a></li>";
+                                }
+                                content += "</ul></body></html>";
+                                std::vector<char> body(content.begin(), content.end());
+                                res->set_body(body);
+                                std::vector<char> response_binary = res->get_response();
+                                size_t start = 0;
+                                size_t end = 0;
+                                while (start < response_binary.size())
+                                {
+                                    end = start + 2048;
+                                    if (end > response_binary.size())
+                                        end = response_binary.size();
+                                    send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
+                                    start = end;
+                                }
+                                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                delete clients[client_fd];
+                                clients.erase(client_fd);
+                                close(client_fd);
+                            }
+                            else if(is_cgi && is_it_a_cgi(path))
+                            {
+                                Response *res = new Response(clients[client_fd]->req);
+                                res->set_status_code(200);
+                                res->set_status_message("OK");
+                                res->set_header("Content-Type", "text/html");
+                                std::string content = "<html><body><h1>from cgi file hahahahaha </h1></body></html>";
+                                std::vector<char> body(content.begin(), content.end());
+                                res->set_body(body);
+                                std::vector<char> response_binary = res->get_response();
+                                size_t start = 0;
+                                size_t end = 0;
+                                while (start < response_binary.size())
+                                {
+                                    end = start + 2048;
+                                    if (end > response_binary.size())
+                                        end = response_binary.size();
+                                    send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
+                                    start = end;
+                                }
+                                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                delete clients[client_fd];
+                                clients.erase(client_fd);
+                                close(client_fd);
+                            }
+                            else
+                            {
+                                char buffer[SEND_BUFFER_SIZE];
+                                if (clients[client_fd]->header_flag == false)
+                                {
+                                    clients[client_fd]->file_stream.open(path.c_str(), std::ios::binary);
+                                    if (!clients[client_fd]->file_stream.is_open())
+                                        throw 404;
+                                    clients[client_fd]->file_offset = 0;
+                                    clients[client_fd]->sending_file = true;
+                                    clients[client_fd]->header_flag = true;
+                                    // buffer = generate_header(clients[client_fd]->file_stream, path);
+                                    std::vector<char> header = generate_header(clients[client_fd]->file_stream, path);
+                                    for (size_t i = 0; i < header.size(); i++)
+                                        buffer[i] = header[i];
+                                    send(client_fd, buffer, header.size(), 0);
+                                }
+                                else
+                                {
+                                    clients[client_fd]->file_stream.seekg(clients[client_fd]->file_offset);
+                                    clients[client_fd]->file_stream.read(buffer, SEND_BUFFER_SIZE);
+                                    size_t bytes_read = clients[client_fd]->file_stream.gcount();
+                                    // std::cout << "Bytes read: " << bytes_read << std::endl;
+                                    // std::cout << "buffer: " << buffer << std::endl;
+                                    if (bytes_read == 0)
+                                    {
+                                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                        delete clients[client_fd];
+                                        clients.erase(client_fd);
+                                        close(client_fd);
+                                    }
+                                    else
+                                    {
+                                        send(client_fd, buffer, bytes_read, 0);
+                                        clients[client_fd]->file_offset += bytes_read;
+                                    }
+                                }
+                            }
                         }
-                        // send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
-                        // send(client_fd, "\r\n", 2, 0);
-
-                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                        delete clients[client_fd];
-                        clients.erase(client_fd);
-                        close(client_fd);
+                        else
+                        {
+                            Response *res = clients[client_fd]->req.execute_request();
+                            std::vector<char> response_binary = res->get_response();
+                            size_t start = 0;
+                            size_t end = 0;
+                            while (start < response_binary.size())
+                            {
+                                end = start + 2048;
+                                if (end > response_binary.size())
+                                    end = response_binary.size();
+                                send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
+                                start = end;
+                            }
+                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                            delete clients[client_fd];
+                            clients.erase(client_fd);
+                            close(client_fd);
+                        }
                     }
                     catch(const int &code)
                     {

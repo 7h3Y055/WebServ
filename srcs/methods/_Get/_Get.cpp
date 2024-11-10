@@ -226,3 +226,31 @@ Response *get_Response(Request &req)
     }
     return &its_a_file_cgi_or_not(req, path, is_cgi);
 }
+
+
+
+std::vector<char> generate_header(std::ifstream &file, std::string path)
+{
+    std::vector<char> header;
+    std::string status_line = "HTTP/1.1 200 OK\r\n";
+    header.insert(header.end(), status_line.begin(), status_line.end());
+    std::string content_type = "Content-Type: ";
+    size_t pos = path.find_last_of('.');
+    std::string key;
+    if(pos != std::string::npos)
+        key = fill_exts(path.substr(pos));
+    else
+        key = "text/plain";
+    content_type += key + "\r\n";
+    header.insert(header.end(), content_type.begin(), content_type.end());
+    std::string content_length = "Content-Length: ";
+    file.seekg(0, std::ios::end);
+    size_t length = file.tellg();
+    file.seekg(0, std::ios::beg);
+    content_length += std::to_string(length) + "\r\n";
+    header.insert(header.end(), content_length.begin(), content_length.end());
+    header.push_back('\r');
+    header.push_back('\n');
+    return header;
+}
+

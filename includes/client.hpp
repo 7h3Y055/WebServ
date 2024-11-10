@@ -127,4 +127,9 @@ class Client
             return res;
         }
 
+        std::ifstream file_stream;
+        long long file_offset;
+        bool sending_file;
+
+        bool header_flag;
 };
