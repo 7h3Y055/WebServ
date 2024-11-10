@@ -1,10 +1,16 @@
 # NOTES:
-1) check directories in Config file
+1) check directories in Config file     DONE
 2) remove temp_ in name new resource
-3) check CGI
-4) Problem in chunked mechanisms
-5) 
-
+3) check CGI                            DONE
+4) Problem in chunked mechanisms        DONE
+5) redirection
+6) check config                         DONE
+7) check server_names
+8) time out
+9) leak FD
+10) memory leak
+11) catch http error codes
+12) create response chunked
 
 
 

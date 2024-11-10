@@ -51,7 +51,7 @@ std::string get_error_path(int code){
 std::vector<char> get_error_body(const std::string& filename) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        throw 500;
+        return vector<char>();
     }
 
     // Get file size
@@ -61,7 +61,7 @@ std::vector<char> get_error_body(const std::string& filename) {
     // Read the file content into a vector
     std::vector<char> buffer(size);
     if (!file.read(buffer.data(), size)) {
-        throw 500;
+        return vector<char>();
     }
 
     return buffer;
@@ -72,6 +72,7 @@ Response *createResponse(int code, Request *req){
     res->set_status_code(code);
     res->set_status_message(get_error_message(code));
     res->set_header("Content-Type", "text/html");
+    // 
     std::vector<char> body = get_error_body(get_error_path(code));
     res->set_body(body);
     return res;

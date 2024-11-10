@@ -12,7 +12,7 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
     while (end_pos != std::string::npos && start_pos < str.size())
     {
         end_pos = str.find_first_of(delimiters, start_pos);
-        if (start_pos != end_pos)
+        if (start_pos != end_pos && start_pos != string::npos)
             strs.push_back(str.substr(start_pos, end_pos - start_pos));
         start_pos = end_pos + 1;
     }
@@ -20,6 +20,11 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
 }
 
 void remove_white_spaces_edges(std::string &str){
+    size_t start = str.find_first_not_of(" \t\r\n\v");
+    if (start == std::string::npos){
+        str = "";
+        return ;
+    }
     str = str.substr(str.find_first_not_of(" \t\r\n\v"), std::string::npos);
     str = str.substr(0, str.find_last_not_of(" \t\r\n\v") + 1);
 }
@@ -32,6 +37,8 @@ std::pair<std::string, std::string> fill_header(std::string header){
     if (std::isspace(header[header.find(':') - 1]))
         throw 400;
     pair.first = header.substr(0, header.find(':'));
+    if (header.find(':') == std::string::npos)
+        throw 400;
     pair.second = header.substr(header.find(':') + 1, std::string::npos);
     pair.second = pair.second.substr(0, pair.second.find('\r'));
     remove_white_spaces_edges(pair.second);
@@ -69,7 +76,7 @@ int ft_ishex(char c){
     return 0;
 }
 
-unsigned long long hex2ll(std::string str){
+unsigned long long hex2ll(std::string &str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
@@ -133,9 +140,19 @@ std::string get_http_line(std::vector<char> *buf){
     return line;
 }
 
-bool is_CGI(std::string file_name){
-    if (false)
+bool is_CGI(std::string file_name, size_t index){
+    file_name.reserve();
+    
+    size_t pos = file_name.find_last_of('.');
+    if (pos == std::string::npos)
+        return false;
+    file_name.reserve();
+    string extention = file_name.substr(pos, file_name.size());
+    location loc = get_location(file_name, servers[index]);
+    
+    if (loc.getCgi()[extention].size() != 0)
         return true;
+
     return false;
 }
 
@@ -157,7 +174,7 @@ void    Request::fill_request(std::vector<char> &buf){
                 _URI = check_URI(strs[1]);
                 _Version = (strs[2] == "HTTP/1.1" ? strs[2] : throw 505);
                 _File_name = _URI.substr(0, _URI.find('?'));
-                _is_request_CGI = is_CGI(_File_name);
+                _is_request_CGI = is_CGI(_File_name, get_server_index());
             }
             else{
                 throw 400;
@@ -243,7 +260,6 @@ void    Request::fill_request(std::vector<char> &buf){
                     if (chunked_length > _Buffer.size())
                         return ;
                     file.write(&(*_Buffer.begin()), chunked_length);
-                    file.flush();
                     _Buffer.erase(_Buffer.begin(), _Buffer.begin() + chunked_length);
                     chunked_state = false;
                 }
@@ -253,7 +269,6 @@ void    Request::fill_request(std::vector<char> &buf){
                 throw 413;
             }
             file.close();
-
         }
     }
 }

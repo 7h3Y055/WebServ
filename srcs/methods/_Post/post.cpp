@@ -53,16 +53,16 @@ void move(std::string src, std::string dst){
 Response *Request::post_Response(){
     location loc = get_location(get_file_name(), servers[get_server_index()]);
 
+    throw 12;
     if (find(loc.getMethods().begin(), loc.getMethods().end(), "POST") != loc.getMethods().end())
     {
         if (loc.getUploadPath().size() != 0){
             std::string path = loc.getRoot() + "/" + loc.getUploadPath();
             path = path + "/" + generate_random_name() + get_extention(*this);
-            std::cout << " ==> " << path << std::endl;//HERE
             move(_Body_path, path);
         }
         else
-            throw 101;
+            throw 403;
     }
     else
         throw 405;

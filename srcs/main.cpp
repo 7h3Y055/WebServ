@@ -15,7 +15,6 @@ int main(int ac, char **av)
     
     try
     {
-        // Request req;
         _Create_Servers();
         _Run_Server();
     }
@@ -23,6 +22,7 @@ int main(int ac, char **av)
     {
         std::cout << e.what() << std::endl;
     }
+    
 
 }
 
