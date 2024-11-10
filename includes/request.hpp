@@ -23,6 +23,7 @@ class Request
         int _Host_found;
 
         std::vector<char> _Buffer;
+        // std::vector<char> _Chunked_Buffer;
         std::string _Method;
         std::string _Transfer_Mechanism;
         long long _Fixed_length;
@@ -32,6 +33,7 @@ class Request
         std::string _Host;
         std::map<std::string, std::string> _Headers;
         std::string _Body_path;
+
         int server_index;
     public:
 

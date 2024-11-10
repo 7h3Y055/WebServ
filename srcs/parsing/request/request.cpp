@@ -73,7 +73,7 @@ unsigned long long hex2ll(std::string str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
-        cout << "111111111: " << endl;
+        cout << "111111111: " << string(str.begin(), str.begin() + 7) << endl;
             throw 400;
         }
     }
@@ -109,9 +109,21 @@ bool buffer_have_nl(std::vector<char> &buf, int _request_state, std::string _Tra
     return false;
 }
 
+bool buffer_have_nl(std::vector<char> &buf){
+    for (size_t i = 0; i < buf.size(); i++){
+        if (buf[i] == '\r' && buf[i + 1] == '\n')
+            return true;
+    }
+    return false;
+}
+
 std::string get_http_line(std::vector<char> *buf){
+    // size_t pos = string(buf->begin(), buf->end()).find("\r\n");
+    // string s = string(buf->begin(), buf->end()).substr(0, pos);
+    // return s;
+
     std::string line;
-    for (size_t i = 0; i < buf->size(); i++){
+    for (size_t i = 0; i < buf->size() - 1; i++){
         if ((*buf)[i] == '\r' && (*buf)[i + 1] == '\n'){
             line = std::string(buf->begin(), buf->begin() + i);
             buf->erase(buf->begin(), buf->begin() + i + 2);
@@ -130,7 +142,7 @@ bool is_CGI(std::string file_name){
 void    Request::fill_request(std::vector<char> &buf){
     _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
     std::string line;
-    bool chunked_state = false;
+    static bool chunked_state = false;
     static unsigned long long chunked_length;
     
     while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
@@ -192,10 +204,15 @@ void    Request::fill_request(std::vector<char> &buf){
             }
         }
         if (_request_state == HTTP_BODY){
+            ofstream file;
             if (_Body_path.size() == 0){
-                _Body_path = "/tmp/" + generate_random_name();
+                do{
+                    file.close();
+                    _Body_path = "/tmp/" + generate_random_name();
+                    file.open(_Body_path.c_str());
+                } while (file.is_open() == 0);
             }
-            std::ofstream file(_Body_path.c_str(), std::ios::app);
+            file.open(_Body_path.c_str(), std::ios::app);
                 if (!file.is_open())
                     throw 500;
             if (_Transfer_Mechanism == "Fixed"){
@@ -208,22 +225,27 @@ void    Request::fill_request(std::vector<char> &buf){
                 }
             }
             else if (_Transfer_Mechanism == "Chunked"){
-                if (chunked_length == 0){
+                if (chunked_state == false){
+                    if (_Buffer[0] == '\r' && _Buffer[1] == '\n')
+                        _Buffer.erase(_Buffer.begin(), _Buffer.begin() + 2);
+                    if (buffer_have_nl(_Buffer) == false){
+                        return ;
+                    }
                     std::string len = get_http_line(&_Buffer);
-                    // cout << len << endl;
                     chunked_length = hex2ll(len);
-                    // cout << chunked_length << endl;
+                    chunked_state = true;
                     if (chunked_length == 0){
                         _request_state = HTTP_COMPLETE;
+                        chunked_state = false;
                     }
-                    // cout << "size: " << size << endl;
                 }
-                if (chunked_length > 0){
-                    size_t size = (chunked_length < _Buffer.size() ? chunked_length : _Buffer.size());
-                    file.write(&(*_Buffer.begin()),  size);
-                    // cout << string(_Buffer.begin() + size - 5, _Buffer.begin() + size + 5) << endl;
-                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size + (chunked_length < _Buffer.size() ? 2 : 0));
-                    chunked_length -= size;
+                if (chunked_state == true){
+                    if (chunked_length > _Buffer.size())
+                        return ;
+                    file.write(&(*_Buffer.begin()), chunked_length);
+                    file.flush();
+                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + chunked_length);
+                    chunked_state = false;
                 }
             }
             if (file.tellp() > servers[server_index].getClientMaxBodySize()){
