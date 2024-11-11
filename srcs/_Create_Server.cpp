@@ -55,8 +55,6 @@ void _Create_Servers()
             int port = servers[i].getPort();
             std::string host = servers[i].getHost();
             std::string server_name = servers[i].getServerName()[0];
-            // std::cout << "server : " << i << " port : |" << port << " host : |" << host << "|" ;
-            // std::cout << " server_name : |" << server_name << "|" << std::endl;
             fd = socket(AF_INET, SOCK_STREAM, 0);
             if (fd == -1)
                 throw std::runtime_error("Error: socket() failed");
@@ -65,23 +63,18 @@ void _Create_Servers()
             servers[i].addr.sin_family = AF_INET;
             servers[i].addr.sin_port = htons(port);
             servers[i].addr.sin_addr.s_addr = htonl(INADDR_ANY);
-            // servers[i].addr.sin_addr.s_addr = inet_addr(host.c_str());
             if (bind(fd, (struct sockaddr *)&servers[i].addr, sizeof(servers[i].addr)) == -1)
-                throw std::runtime_error("Error: bind() failed");
+                std::cerr << "bind failed" << std::endl;
             if (listen(fd, 10) == -1)
                 throw std::runtime_error("Error: listen() failed");
-            int flags = fcntl(fd, F_GETFL, 0);
-            if (flags == -1)
-                throw std::runtime_error("fcntl F_GETFL failed");
-            if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+            if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
                 throw std::runtime_error("fcntl F_SETFL failed");
+            
             servers[i].setFd(fd);
         }
         catch (std::exception &e)
         {
             std::cout << e.what() << std::endl;
-            if (fd != -1)
-                close(fd);
         }
     }
 }
@@ -116,7 +109,6 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int epoll_fd)
     std::map<int, Client *>::iterator it = clients.begin();
     while (it != clients.end())
     {
-        std::cout << "====> " << current_time - it->second->get_last_read() << std::endl;
         if (current_time - it->second->get_last_read() > TIMEOUT)
         {
             std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
@@ -359,7 +351,6 @@ void _Run_Server()
                                         ssize_t ret = send(client_fd, buffer, bytes_read, 0);
                                         if (ret != -1)
                                         {
-                                            std::cout << "good" << std::endl;
                                             clients[client_fd]->update_last_read();
                                         }
                                         clients[client_fd]->file_offset += bytes_read;
