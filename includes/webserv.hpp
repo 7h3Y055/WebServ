@@ -38,6 +38,7 @@
 #include "_Get.hpp"
 #include "client.hpp"
 #include "delete.hpp"
+#include "cgi.hpp"
 
 using namespace std;
 
