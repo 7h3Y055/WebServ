@@ -15,7 +15,6 @@ class Client
 
         char _buffer[BUFFER_SIZE];
         size_t _read_pos;
-        time_t _last_read;
         size_t _bytes_received;
         size_t _bytes_sent;
 
@@ -24,6 +23,7 @@ class Client
         int server_index;
         int server_fd;
         
+        time_t _last_read;
     public:
         Client(int fd, struct sockaddr_in address, int index)
         {
@@ -42,6 +42,14 @@ class Client
         ~Client() {
             close(_fd);
         }
+
+        void update_last_read() {
+            _last_read = time(NULL);
+        }
+        time_t get_last_read() {
+            return _last_read;
+        }
+
         int get_fd() {
             return _fd;
         }
@@ -63,9 +71,7 @@ class Client
         void set_read_pos(size_t pos){
             _read_pos = pos;
         }
-        time_t get_last_read() {
-            return _last_read;
-        }
+        
         size_t get_bytes_received() {
             return _bytes_received;
         }
@@ -127,4 +133,9 @@ class Client
             return res;
         }
 
+        std::ifstream file_stream;
+        long long file_offset;
+        bool sending_file;
+
+        bool header_flag;
 };

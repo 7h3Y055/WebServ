@@ -252,7 +252,7 @@ Response *Request::execute_request(){
     }
     else if (_Method == "GET"){
         std::cout << "[GET]" << std::endl;
-        return get_Response(*this);
+        // return get_Response(*this);
     }
     else if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;

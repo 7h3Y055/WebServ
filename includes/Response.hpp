@@ -20,6 +20,8 @@ class Response
 
         Response(Request &req);
         ~Response();
+
+        bool done;
 };
 
 
