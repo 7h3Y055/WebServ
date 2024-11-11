@@ -33,8 +33,26 @@ std::string get_error_message(int code){
     case 505:
         return "HTTP Version Not Supported";
         break;
+    case 301:
+        return "Moved Permanently";
+        break;
+    case 302:
+        return "Found";
+        break;
+    case 303:
+        return "See Other";
+        break;
+    case 304:
+        return "Not Modified";
+        break;
+    case 307:
+        return "Temporary Redirect";
+        break;
+    case 308:
+        return "Permanent Redirect";
+        break;
     default:
-        return "Unknown Error";
+        return "";
         break;
     }
 }

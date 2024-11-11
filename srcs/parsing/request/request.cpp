@@ -273,8 +273,43 @@ void    Request::fill_request(std::vector<char> &buf){
     }
 }
 
+Response *create_redirection(location &loc, Request &req){
+    Response *res = new Response(req);
+
+    if (req.get_file_name().find("..") == string::npos){
+        int code = loc.getRedirection().begin()->first;
+        res->set_status_code(code);
+        res->set_status_message(get_error_message(code));
+        if (code == 301 || code == 302 || code == 303 || code == 304 || code == 307  || code == 308){
+            res->set_header("Location", loc.getRedirection().begin()->second);
+        }
+        else{
+            res->set_header("Content-Type", "application/octet-stream");
+            vector<char> body(loc.getRedirection().begin()->second.begin(), loc.getRedirection().begin()->second.end());
+            res->set_body(body);
+        }
+    }
+    else{
+        res->set_status_code(302);
+        res->set_status_message(get_error_message(302));
+        res->set_header("Location", "http://example.com");
+        return res;
+    }
+
+
+    return res;
+}
+
 Response *Request::execute_request(){
     location loc = get_location(get_file_name(), servers[get_server_index()]);
+
+    cout << get_file_name() << endl;
+
+    if (loc.getRedirection().size() == 1 || get_file_name().find("..") != string::npos){
+        cout << "[Redirection]" << endl;
+        return create_redirection(loc, *this);
+    }
+
 
     size_t i;
     for (i = 0; i < loc.getMethods().size(); i++)

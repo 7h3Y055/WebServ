@@ -93,7 +93,7 @@ void init_location(location &loc, std::vector<string> &strs)
             throw std::runtime_error("Error: duplicate redirection");
         loc.already_set["redirection"] = "true";
         std::vector<string> redirection = split_string_with_multiple_delemetres(strs[1], "\t\n\v\f\r ");
-        if (redirection.size() != 2 || redirection[0].size() != 3)
+        if (redirection.size() < 1 || redirection[0].size() > 3)
             throw std::runtime_error("Error: invalid redirection");
         for (size_t i = 0; i < redirection[0].size(); ++i){
             if (!isdigit(redirection[0][i]))
