@@ -108,6 +108,29 @@ struct Data
 };
 
 #define SEND_BUFFER_SIZE 2048
+#define TIMEOUT 30
+
+void _Check_for_timeout(std::map<int, Client *> &clients, int epoll_fd)
+{
+    time_t current_time = time(NULL);
+    std::map<int, Client *>::iterator it = clients.begin();
+    while (it != clients.end())
+    {
+        std::cout << "====> " << current_time - it->second->get_last_read() << std::endl;
+        if (current_time - it->second->get_last_read() > TIMEOUT)
+        {
+            std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
+            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
+            delete it->second;
+            close(it->first);
+            clients.erase(it++);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
 
 
 void _Run_Server()
@@ -135,12 +158,12 @@ void _Run_Server()
         fds.push_back(servers[i].getFd()); }
 
     std::vector<int> clients_response;
-
     while (true)
     {
-        int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 1000);
         if (num_events == -1)
             throw std::runtime_error("epoll_wait failed");
+        _Check_for_timeout(clients, epoll_fd);
         for (int i = 0; i < num_events; i++)
         {
             if (std::find(fds.begin(), fds.end(), events[i].data.fd) != fds.end())
@@ -187,7 +210,7 @@ void _Run_Server()
                     close(client_fd);
                     continue;
                 }
-                if (events[i].events & EPOLLIN )
+                if (events[i].events & EPOLLIN)
                 {
                     int ret = recv(client_fd, clients[client_fd]->get_buffer(), BUFFER_SIZE, 0);
                     if (ret == -1)
@@ -201,6 +224,7 @@ void _Run_Server()
                         close(client_fd);
                         continue;
                     }
+                    clients[client_fd]->update_last_read();
                     clients[client_fd]->set_read_pos(clients[client_fd]->get_read_pos() + ret);
                     char *buffer = clients[client_fd]->get_buffer();
                     std::vector<char> buf(buffer, buffer + ret);
@@ -310,7 +334,6 @@ void _Run_Server()
                                     clients[client_fd]->file_offset = 0;
                                     clients[client_fd]->sending_file = true;
                                     clients[client_fd]->header_flag = true;
-                                    // buffer = generate_header(clients[client_fd]->file_stream, path);
                                     std::vector<char> header = generate_header(clients[client_fd]->file_stream, path);
                                     for (size_t i = 0; i < header.size(); i++)
                                         buffer[i] = header[i];
@@ -318,6 +341,7 @@ void _Run_Server()
                                 }
                                 else
                                 {
+                                    std::memset(buffer, 0, SEND_BUFFER_SIZE);
                                     clients[client_fd]->file_stream.seekg(clients[client_fd]->file_offset);
                                     clients[client_fd]->file_stream.read(buffer, SEND_BUFFER_SIZE);
                                     size_t bytes_read = clients[client_fd]->file_stream.gcount();
@@ -332,8 +356,14 @@ void _Run_Server()
                                     }
                                     else
                                     {
-                                        send(client_fd, buffer, bytes_read, 0);
+                                        ssize_t ret = send(client_fd, buffer, bytes_read, 0);
+                                        if (ret != -1)
+                                        {
+                                            std::cout << "good" << std::endl;
+                                            clients[client_fd]->update_last_read();
+                                        }
                                         clients[client_fd]->file_offset += bytes_read;
+                                        
                                     }
                                 }
                             }
