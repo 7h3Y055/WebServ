@@ -12,7 +12,7 @@ class location
         std::vector<std::string> index;
         bool directory_listing;
         std::string upload_path;
-        std::vector<std::map<std::string, std::string> > cgi;
+        std::map<std::string, std::string> cgi;
         std::map<int, std::string> redirection;
         std::string root;
     public:
@@ -23,7 +23,7 @@ class location
         std::vector<std::string> &getIndex() { return index; }
         bool &getDirectoryListing() { return directory_listing; }
         std::string &getUploadPath() { return upload_path; }
-        std::vector<std::map<std::string, std::string> > &getCgi() { return cgi; }
+        std::map<std::string, std::string> &getCgi() { return cgi; }
         std::map<int, std::string> &getRedirection() { return redirection; }
         std::string &getRoot() { return root; }
 
