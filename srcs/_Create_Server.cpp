@@ -292,11 +292,13 @@ void _Run_Server()
                             }
                             else if(is_cgi && is_it_a_cgi(path))
                             {
+                                CGI cgi(clients[client_fd]->req, path, loc, *clients[client_fd]);
+                                cgi.execute();
                                 Response *res = new Response(clients[client_fd]->req);
                                 res->set_status_code(200);
                                 res->set_status_message("OK");
                                 res->set_header("Content-Type", "text/html");
-                                std::string content = "<html><body><h1>from cgi file hahahahaha </h1></body></html>";
+                                std::string content = cgi.get_output();
                                 std::vector<char> body(content.begin(), content.end());
                                 res->set_body(body);
                                 std::vector<char> response_binary = res->get_response();
