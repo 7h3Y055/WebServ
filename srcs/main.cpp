@@ -12,10 +12,8 @@ int main(int ac, char **av)
         std::cerr << e.what() << std::endl;
         return 1;
     }
-    
     try
     {
-        // Request req;
         _Create_Servers();
         _Run_Server();
     }

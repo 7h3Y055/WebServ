@@ -46,19 +46,19 @@
 //     std::cout << "}" << std::endl;
 // }
 
-
+std::string _to_string(int n)
+{
+    std::stringstream ss;
+    ss << n;
+    return ss.str();
+}
 
 void _Create_Servers()
 {
-    int opt = 1;
-
-    // Map to keep track of existing sockets for host:port combinations
+    std::map<int, std::vector<Serv> > sockets_servs;
     std::map<std::pair<std::string, int>, int> host_port_to_fd;
-
-    // Map from socket fd to server configurations
-    std::map<int, std::vector<Serv>> socket_to_servers;
-
-    for (size_t i = 0; i < servers.size(); ++i)
+    int opt = 1;
+    for (size_t i = 0; i < servers.size(); i++)
     {
         try
         {
@@ -66,75 +66,63 @@ void _Create_Servers()
             std::string host = servers[i].getHost();
             std::pair<std::string, int> host_port = std::make_pair(host, port);
 
-            int fd;
             if (host_port_to_fd.find(host_port) == host_port_to_fd.end())
             {
-                // Create new socket
-                fd = socket(AF_INET, SOCK_STREAM, 0);
+                int fd = socket(AF_INET, SOCK_STREAM, 0);
                 if (fd == -1)
-                    throw std::runtime_error("Error: socket() failed");
+                    throw std::runtime_error("socket failed");
                 if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
                 {
                     close(fd);
                     throw std::runtime_error("setsockopt failed");
                 }
-
-                // Prepare sockaddr_in
-                struct sockaddr_in address;
-                memset(&address, 0, sizeof(address));
-                address.sin_family = AF_INET;
-                address.sin_port = htons(port);
-
-                // Convert host to IP address (assume IPv4 address in string format)
-                // Implement custom IP address parser if needed
-                address.sin_addr.s_addr = inet_addr(host.c_str());
-                if (address.sin_addr.s_addr == INADDR_NONE)
+                struct addrinfo hints, *res;
+                std::memset(&hints, 0, sizeof(hints));
+                hints.ai_family = AF_INET;
+                hints.ai_socktype = SOCK_STREAM;
+                hints.ai_flags = AI_PASSIVE;
+                std::string port_str = _to_string(port);
+                int get_addr = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &res);
+                if (get_addr != 0)
                 {
                     close(fd);
-                    throw std::runtime_error("Invalid IP address");
+                    throw std::runtime_error("getaddrinfo failed");
                 }
-
-                // Bind socket
-                if (bind(fd, (struct sockaddr*)&address, sizeof(address)) == -1)
+                if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
                 {
                     close(fd);
+                    freeaddrinfo(res);
                     throw std::runtime_error("bind failed");
                 }
-
-                // Listen on socket
+                freeaddrinfo(res);
                 if (listen(fd, SOMAXCONN) == -1)
                 {
                     close(fd);
                     throw std::runtime_error("listen failed");
                 }
-
-                // Set socket to non-blocking
-                if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
+                if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
                 {
                     close(fd);
                     throw std::runtime_error("fcntl failed");
                 }
 
-                // Store the fd
                 host_port_to_fd[host_port] = fd;
-                socket_to_servers[fd].push_back(servers[i]);
                 servers[i].setFd(fd);
+                sockets_servs[fd].push_back(servers[i]);
+
             }
             else
             {
-                // Reuse existing socket fd
-                fd = host_port_to_fd[host_port];
-                socket_to_servers[fd].push_back(servers[i]);
-                servers[i].setFd(fd);
+                servers[i].setFd(host_port_to_fd[host_port]);
+                sockets_servs[host_port_to_fd[host_port]].push_back(servers[i]);
             }
         }
-        catch (const std::exception& e)
+        catch(const std::exception& e)
         {
-            std::cerr << "Error in _Create_Servers: " << e.what() << std::endl;
+            std::cerr << e.what() << '\n';
         }
     }
 }
-
 
 
 int get_server_index(int fd, string &host)
@@ -148,7 +136,7 @@ int get_server_index(int fd, string &host)
             size_t pos2 = host.find(":");
             if (pos2 != string::npos)
             {
-                if (host.substr(pos2 + 1) == std::to_string(servers[i].getPort()) &&
+                if (host.substr(pos2 + 1) == _to_string(servers[i].getPort()) &&
                     servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // HERE warrning !!!!!!!!!!!!!!!
                     {
                         return i;
@@ -198,19 +186,21 @@ void _Run_Server()
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
     
+    std::vector<int> fds;
+
     for (int i = 0; i < servers.size(); i++)
     {
         event.events = EPOLLIN;
         event.data.fd = servers[i].getFd();
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, servers[i].getFd(), &event) == -1)
-            std::cerr << "epoll_ctl failed: " << strerror(errno) << std::endl;
+        if(std::find(fds.begin(), fds.end(), servers[i].getFd()) == fds.end())
+        {
+            fds.push_back(servers[i].getFd());
+            if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, servers[i].getFd(), &event) == -1)
+                std::cerr << "epoll_ctl failed: " << strerror(errno) << std::endl;
+        }
     }
 
     std::map<int, Client *> clients;
-    std::vector<int> fds;
-
-    for (int i = 0; i < servers.size(); i++) {
-        fds.push_back(servers[i].getFd()); }
 
     std::vector<int> clients_response;
     while (true)
@@ -289,13 +279,10 @@ void _Run_Server()
                 }
                 else if (events[i].events & EPOLLOUT && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                 {
-                    std::cout << "clietns request host == " << clients[client_fd]->req.get_Host() << std::endl;
                     int server_fd = events[i].data.fd;
                     int index = get_server_index(server_fd, clients[client_fd]->req.get_Host());
-                    // cout << "index == " << index << endl;
                     clients[client_fd]->req.set_server_index(index);
-
-                    std::cout << "server index == " << index << std::endl;
+                    // std::cout << "server index == " << index << std::endl;
                     try
                     {
                         if (clients[client_fd]->req.get_method() == "GET")
@@ -303,6 +290,7 @@ void _Run_Server()
                             bool is_cgi = false;
                             std::string resources = clients[client_fd]->req.get_URI();
                             location loc = find_best_location(servers[clients[client_fd]->req.get_server_index()].getLocations(), resources);
+                            // std::cout << "location name == "<< loc.getPath() << std::endl;
                             std::string root = loc.getRoot();
                             if (loc.getCgi().size() > 0)
                                 is_cgi = true;
@@ -324,6 +312,8 @@ void _Run_Server()
                             }
                             if (get_resources_type(path) == "directory")
                             {
+                                if (path[path.size() - 1] != '/')
+                                    throw 301;
                                 if (!loc.getDirectoryListing())
                                 {
                                     std::cout << "no directory listing" << std::endl;
@@ -364,6 +354,7 @@ void _Run_Server()
                             }
                             else if(is_cgi && is_it_a_cgi(path))
                             {
+                                std::cout << "this is the path == " << path << std::endl;
                                 Response *res = new Response(clients[client_fd]->req);
                                 res->set_status_code(200);
                                 res->set_status_message("OK");
