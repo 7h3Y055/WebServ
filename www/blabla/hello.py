@@ -7,7 +7,7 @@ import cgitb
 cgitb.enable()  # Enable debugging
 
 # Output the content type and start of HTML
-# print("Content-Type: text/html\n")
+print("Content-Type: text/html\n")
 print("""
 <!DOCTYPE html>
 <html lang="en">
