@@ -4,6 +4,28 @@ void push_str(std::vector<char> &vec, std::string str){
     vec.insert(vec.end(), str.begin(), str.end());
 }
 
+std::string get_date_header() {
+    time_t t;
+    time(&t);
+
+    std::string d = ctime(&t);
+
+    std::string date = "Date: ";
+
+    date += d.substr(0,3);
+    date += ", ";
+    date += d.substr(8, 2);
+    date += " ";
+    date += d.substr(4, 3);
+    date += " ";
+    date += d.substr(20, 4);
+    date += " ";
+    date += d.substr(11, 8);
+    date += " GMT";
+
+    return date;
+}
+
 std::vector<char> &Response::get_response(){
     std::vector<char> *response = new std::vector<char>;
     std::stringstream ss;
@@ -21,6 +43,7 @@ std::vector<char> &Response::get_response(){
 
     // add headers
     push_str(*response, server_name + "\r\n");
+    push_str(*response, get_date_header() + "\r\n");
     for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); it++){
         push_str(*response, it->first + ": " + it->second + "\r\n");
     }
