@@ -65,13 +65,10 @@ void _Create_Servers()
             servers[i].addr.sin_addr.s_addr = htonl(INADDR_ANY);
             if (bind(fd, (struct sockaddr *)&servers[i].addr, sizeof(servers[i].addr)) == -1)
                 std::cerr << "bind failed" << std::endl;
-                std::cerr << "bind failed" << std::endl;
             if (listen(fd, 10) == -1)
                 throw std::runtime_error("Error: listen() failed");
             if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
-            if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
                 throw std::runtime_error("fcntl F_SETFL failed");
-            
             
             servers[i].setFd(fd);
         }
@@ -128,42 +125,6 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int epoll_fd)
 }
 
 
-
-struct Data
-{
-    int fd;
-    Request req;
-    std::ifstream file_stream;
-    size_t file_offset;
-    bool sending_file;
-    // Other members...
-};
-
-#define SEND_BUFFER_SIZE 2048
-#define TIMEOUT 30
-
-void _Check_for_timeout(std::map<int, Client *> &clients, int epoll_fd)
-{
-    time_t current_time = time(NULL);
-    std::map<int, Client *>::iterator it = clients.begin();
-    while (it != clients.end())
-    {
-        if (current_time - it->second->get_last_read() > TIMEOUT)
-        {
-            std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
-            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
-            delete it->second;
-            close(it->first);
-            clients.erase(it++);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-}
-
-
 void _Run_Server()
 {
     int epoll_fd = epoll_create1(0);
@@ -174,7 +135,6 @@ void _Run_Server()
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
     
-    
     for (int i = 0; i < servers.size(); i++)
     {
         event.events = EPOLLIN;
@@ -183,13 +143,8 @@ void _Run_Server()
             throw std::runtime_error("epoll_ctl failed");
     }
 
-
     std::map<int, Client *> clients;
     std::vector<int> fds;
-
-    for (int i = 0; i < servers.size(); i++) {
-        fds.push_back(servers[i].getFd()); }
-
 
     for (int i = 0; i < servers.size(); i++) {
         fds.push_back(servers[i].getFd()); }
@@ -198,10 +153,8 @@ void _Run_Server()
     while (true)
     {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 1000);
-        int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 1000);
         if (num_events == -1)
             throw std::runtime_error("epoll_wait failed");
-        _Check_for_timeout(clients, epoll_fd);
         _Check_for_timeout(clients, epoll_fd);
         for (int i = 0; i < num_events; i++)
         {
@@ -223,7 +176,6 @@ void _Run_Server()
                     int server_fd = events[i].data.fd;
                     int index = get_server_index(server_fd);
                     Client *client = new Client(client_fd, addr, index);
-                    client->header_flag = false;
                     client->header_flag = false;
                     event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLOUT;
                     event.data.fd = client_fd;
@@ -251,7 +203,6 @@ void _Run_Server()
                     continue;
                 }
                 if (events[i].events & EPOLLIN)
-                if (events[i].events & EPOLLIN)
                 {
                     int ret = recv(client_fd, clients[client_fd]->get_buffer(), BUFFER_SIZE, 0);
                     if (ret == -1)
@@ -266,14 +217,9 @@ void _Run_Server()
                         continue;
                     }
                     clients[client_fd]->update_last_read();
-                    clients[client_fd]->update_last_read();
                     clients[client_fd]->set_read_pos(clients[client_fd]->get_read_pos() + ret);
                     char *buffer = clients[client_fd]->get_buffer();
                     std::vector<char> buf(buffer, buffer + ret);
-                    clients[client_fd]->req.fill_request(buf);
-                }
-                else if (events[i].events & EPOLLOUT && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
-                {
                     clients[client_fd]->req.fill_request(buf);
                 }
                 else if (events[i].events & EPOLLOUT && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
@@ -346,9 +292,13 @@ void _Run_Server()
                             }
                             else if(is_cgi && is_it_a_cgi(path))
                             {
-                                CGI cgi(clients[client_fd]->req, path, loc, *clients[client_fd]);
-                                cgi.execute();
-                                Response *res = cgi.get_response();
+                                Response *res = new Response(clients[client_fd]->req);
+                                res->set_status_code(200);
+                                res->set_status_message("OK");
+                                res->set_header("Content-Type", "text/html");
+                                std::string content = "<html><body><h1>from cgi file hahahahaha </h1></body></html>";
+                                std::vector<char> body(content.begin(), content.end());
+                                res->set_body(body);
                                 std::vector<char> response_binary = res->get_response();
                                 size_t start = 0;
                                 size_t end = 0;
@@ -423,16 +373,6 @@ void _Run_Server()
                                 send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
                                 start = end;
                             }
-                            size_t start = 0;
-                            size_t end = 0;
-                            while (start < response_binary.size())
-                            {
-                                end = start + 2048;
-                                if (end > response_binary.size())
-                                    end = response_binary.size();
-                                send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
-                                start = end;
-                            }
                             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                             delete clients[client_fd];
                             clients.erase(client_fd);
@@ -449,10 +389,6 @@ void _Run_Server()
                         clients.erase(client_fd);
                         close(client_fd);
                     }
-                }
-            }
-        }
-    }
                 }
             }
         }
