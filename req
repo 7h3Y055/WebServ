@@ -1,1 +1,11 @@
-POST /upload HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5\r\n\r\nHELLO\r\n\r\n
+POST /upload HTTP/1.1\r\n
+Host: localhost\r\n
+Content-Type: application/octet-stream\r\n
+Transfer-Encoding: chunked\r\n
+\r\n
+5\r\n
+HELLO\r\n
+1\r\n
+A\r\n
+0\r\n
+\r\n

@@ -1,9 +1,18 @@
-# NOTES:
-1) check the directories if exist in config file
-2) create chunked with a specific size
-3) if client close connection before the request complate remove the temprary file (buffer file in /tmp)
-4) remove temp_
-5) 
+# NOTES: ↻ 
+1) check directories in Config file     DONE
+2) remove temp_ in name new resource    EAZY
+3) check CGI                            DONE
+4) Problem in chunked mechanisms        DONE
+5) redirection                          DONE
+6) check config                         DONE
+7) check server_names                   EAZY
+8) time out                             NTME
+9) leak FD                              LAST
+10) memory leak                         LAST
+11) catch http error codes              DONE
+12) http://x.com/index.php/var?q=1       ↻ 
+13) add Date: Header                    DONE
+14) Redirection                         DONE
 
 
 
@@ -38,5 +47,6 @@ Hello
 ```
 ## 3. Multiparts(boundaries)
 But not is mandatory
+
 
 
