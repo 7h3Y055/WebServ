@@ -12,7 +12,7 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
     while (end_pos != std::string::npos && start_pos < str.size())
     {
         end_pos = str.find_first_of(delimiters, start_pos);
-        if (start_pos != end_pos)
+        if (start_pos != end_pos && start_pos != string::npos)
             strs.push_back(str.substr(start_pos, end_pos - start_pos));
         start_pos = end_pos + 1;
     }
@@ -20,6 +20,11 @@ std::vector<std::string> split_string_with_multiple_delemetres(std::string &str,
 }
 
 void remove_white_spaces_edges(std::string &str){
+    size_t start = str.find_first_not_of(" \t\r\n\v");
+    if (start == std::string::npos){
+        str = "";
+        return ;
+    }
     str = str.substr(str.find_first_not_of(" \t\r\n\v"), std::string::npos);
     str = str.substr(0, str.find_last_not_of(" \t\r\n\v") + 1);
 }
@@ -32,6 +37,8 @@ std::pair<std::string, std::string> fill_header(std::string header){
     if (std::isspace(header[header.find(':') - 1]))
         throw 400;
     pair.first = header.substr(0, header.find(':'));
+    if (header.find(':') == std::string::npos)
+        throw 400;
     pair.second = header.substr(header.find(':') + 1, std::string::npos);
     pair.second = pair.second.substr(0, pair.second.find('\r'));
     remove_white_spaces_edges(pair.second);
@@ -69,19 +76,22 @@ int ft_ishex(char c){
     return 0;
 }
 
-unsigned long long hex2ll(std::string str){
+unsigned long long hex2ll(std::string &str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
-            throw 400; // HERE 
+        cout << "111111111: " << string(str.begin(), str.begin() + 7) << endl;
+            throw 400;
         }
     }
     std::stringstream ss;
     ss << std::hex << str;
     ss >> length;
 
-    if (ss.fail())
-        throw 400;
+    if (ss.fail()){
+        cout << "111111111: " << endl;
+        throw 400; // HERE 
+    }
 
     return length;
 }
@@ -106,9 +116,21 @@ bool buffer_have_nl(std::vector<char> &buf, int _request_state, std::string _Tra
     return false;
 }
 
+bool buffer_have_nl(std::vector<char> &buf){
+    for (size_t i = 0; i < buf.size(); i++){
+        if (buf[i] == '\r' && buf[i + 1] == '\n')
+            return true;
+    }
+    return false;
+}
+
 std::string get_http_line(std::vector<char> *buf){
+    // size_t pos = string(buf->begin(), buf->end()).find("\r\n");
+    // string s = string(buf->begin(), buf->end()).substr(0, pos);
+    // return s;
+
     std::string line;
-    for (size_t i = 0; i < buf->size(); i++){
+    for (size_t i = 0; i < buf->size() - 1; i++){
         if ((*buf)[i] == '\r' && (*buf)[i + 1] == '\n'){
             line = std::string(buf->begin(), buf->begin() + i);
             buf->erase(buf->begin(), buf->begin() + i + 2);
@@ -118,16 +140,26 @@ std::string get_http_line(std::vector<char> *buf){
     return line;
 }
 
-bool is_CGI(std::string file_name){
-    if (false)
+bool is_CGI(std::string file_name, size_t index){
+    file_name.reserve();
+    
+    size_t pos = file_name.find_last_of('.');
+    if (pos == std::string::npos)
+        return false;
+    file_name.reserve();
+    string extention = file_name.substr(pos, file_name.size());
+    location loc = get_location(file_name, servers[index]);
+    
+    if (loc.getCgi()[extention].size() != 0)
         return true;
+
     return false;
 }
 
 void    Request::fill_request(std::vector<char> &buf){
     _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
     std::string line;
-    bool chunked_state = false;
+    static bool chunked_state = false;
     static unsigned long long chunked_length;
     
     while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
@@ -142,7 +174,7 @@ void    Request::fill_request(std::vector<char> &buf){
                 _URI = check_URI(strs[1]);
                 _Version = (strs[2] == "HTTP/1.1" ? strs[2] : throw 505);
                 _File_name = _URI.substr(0, _URI.find('?'));
-                _is_request_CGI = is_CGI(_File_name);
+                _is_request_CGI = is_CGI(_File_name, get_server_index());
             }
             else{
                 throw 400;
@@ -189,10 +221,15 @@ void    Request::fill_request(std::vector<char> &buf){
             }
         }
         if (_request_state == HTTP_BODY){
+            ofstream file;
             if (_Body_path.size() == 0){
-                _Body_path = "/tmp/" + generate_random_name();
+                do{
+                    file.close();
+                    _Body_path = "/tmp/" + generate_random_name();
+                    file.open(_Body_path.c_str());
+                } while (file.is_open() == 0);
             }
-            std::ofstream file(_Body_path.c_str(), std::ios::app);
+            file.open(_Body_path.c_str(), std::ios::app);
                 if (!file.is_open())
                     throw 500;
             if (_Transfer_Mechanism == "Fixed"){
@@ -205,38 +242,74 @@ void    Request::fill_request(std::vector<char> &buf){
                 }
             }
             else if (_Transfer_Mechanism == "Chunked"){
-                if (chunked_length == 0){
+                if (chunked_state == false){
+                    if (_Buffer[0] == '\r' && _Buffer[1] == '\n')
+                        _Buffer.erase(_Buffer.begin(), _Buffer.begin() + 2);
+                    if (buffer_have_nl(_Buffer) == false){
+                        return ;
+                    }
                     std::string len = get_http_line(&_Buffer);
                     chunked_length = hex2ll(len);
-                    cout << "chunked_length: " << len << " | " << chunked_length << endl;
+                    chunked_state = true;
                     if (chunked_length == 0){
                         _request_state = HTTP_COMPLETE;
+                        chunked_state = false;
                     }
                 }
-                if (chunked_length > 0){
-                    size_t size = (chunked_length + 2 < _Buffer.size() ? chunked_length + 2 : _Buffer.size());
-                    file.write(&(*_Buffer.begin()),  size);
-                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size - 1);
-                    chunked_length -= (size - 2);
-                    string str(_Buffer.begin(), _Buffer.end());
-                    cout << "BUFFER: [" << chunked_length <<"]"  << endl;
-                    if (chunked_length == 18446744073709551614)
-                        exit(0);
+                if (chunked_state == true){
+                    if (chunked_length > _Buffer.size())
+                        return ;
+                    file.write(&(*_Buffer.begin()), chunked_length);
+                    _Buffer.erase(_Buffer.begin(), _Buffer.begin() + chunked_length);
+                    chunked_state = false;
                 }
             }
             if (file.tellp() > servers[server_index].getClientMaxBodySize()){
-                std::cout << file.tellp() << std::endl;
                 file.close();
                 throw 413;
             }
             file.close();
-
         }
     }
 }
 
+Response *create_redirection(location &loc, Request &req){
+    Response *res = new Response(req);
+
+    if (req.get_file_name().find("..") == string::npos){
+        int code = loc.getRedirection().begin()->first;
+        res->set_status_code(code);
+        res->set_status_message(get_error_message(code));
+        if (code == 301 || code == 302 || code == 303 || code == 304 || code == 307  || code == 308){
+            res->set_header("Location", loc.getRedirection().begin()->second);
+        }
+        else{
+            res->set_header("Content-Type", "application/octet-stream");
+            vector<char> body(loc.getRedirection().begin()->second.begin(), loc.getRedirection().begin()->second.end());
+            res->set_body(body);
+        }
+    }
+    else{
+        res->set_status_code(302);
+        res->set_status_message(get_error_message(302));
+        res->set_header("Location", "http://example.com");
+        return res;
+    }
+
+
+    return res;
+}
+
 Response *Request::execute_request(){
     location loc = get_location(get_file_name(), servers[get_server_index()]);
+
+    cout << get_file_name() << endl;
+
+    if (loc.getRedirection().size() == 1 || get_file_name().find("..") != string::npos){
+        cout << "[Redirection]" << endl;
+        return create_redirection(loc, *this);
+    }
+
 
     size_t i;
     for (i = 0; i < loc.getMethods().size(); i++)
@@ -252,11 +325,11 @@ Response *Request::execute_request(){
     }
     else if (_Method == "GET"){
         std::cout << "[GET]" << std::endl;
-        // return get_Response(*this);
+        return get_Response(*this);
     }
     else if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;
-        // return post_Response();
+        return post_Response();
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
