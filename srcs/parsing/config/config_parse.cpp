@@ -84,7 +84,7 @@ void init_location(location &loc, std::vector<string> &strs)
         if (cgi.size() != 2)
             throw std::runtime_error("Error: invalid cgi");
         std::map<std::string, std::string> cgi_map;
-        cgi_map[cgi[0]] = cgi[1];
+        loc.getCgi()[cgi[0]] = cgi[1];
     }
     else if (strs[0] == "redirection" || strs[0] == "REDIRECTION"){
         if (strs.size() != 2)
@@ -93,7 +93,7 @@ void init_location(location &loc, std::vector<string> &strs)
             throw std::runtime_error("Error: duplicate redirection");
         loc.already_set["redirection"] = "true";
         std::vector<string> redirection = split_string_with_multiple_delemetres(strs[1], "\t\n\v\f\r ");
-        if (redirection.size() != 2 || redirection[0].size() != 3)
+        if (redirection.size() < 1 || redirection[0].size() > 3)
             throw std::runtime_error("Error: invalid redirection");
         for (size_t i = 0; i < redirection[0].size(); ++i){
             if (!isdigit(redirection[0][i]))
@@ -305,6 +305,14 @@ void add_default_location(Serv &server){
     server.getLocations().push_back(loc);
 }
 
+bool pathExists(const string path) {
+    struct stat buffer;
+    return (stat(path.c_str(), &buffer) == 0);
+}
+
+bool pathExecutable(const string path) {
+    return (access(path.c_str(), X_OK) == 0);
+}
 
 void check_duplacate_locations(Serv &server){
     for (size_t i = 0; i < server.getLocations().size(); ++i) {
@@ -315,9 +323,28 @@ void check_duplacate_locations(Serv &server){
     }
 }
 
+void check_paths(Serv &server){
+
+    // if (!pathExists(server.getRoot()))
+    //     throw std::runtime_error("Error: invalid root '" + server.getRoot() + "'");
+    // for (map<string, string>::iterator it = server.getErrorPages().begin(); it != server.getErrorPages().end(); ++it) {
+    //     if (!pathExists(it->second))
+    //         throw std::runtime_error("Error: invalid error page '" + it->second + "'");
+    // }
+    // for (size_t i = 0; i < server.getLocations().size(); ++i) {
+    //     if (!pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getPath()))
+    //         throw std::runtime_error("Error: invalid location root '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getPath() + "'");
+    //     if (server.getLocations()[i].getUploadPath() != "" && !pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath()))
+    //         throw std::runtime_error("Error: invalid upload path '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath() + "'");
+    //     for (map<string, string>::iterator it = server.getLocations()[i].getCgi().begin(); it != server.getLocations()[i].getCgi().end(); ++it) {
+    //         if (!pathExecutable(it->second))
+    //             throw std::runtime_error("Error: invalid cgi '" + it->second + "'");
+    //     }
+    // }
+}
+
 void parse_config(int ac, char **av)
 {
-    // std::vector<Serv> servers;
     std::string config_path;
 
     if (ac == 2)
@@ -350,6 +377,7 @@ void parse_config(int ac, char **av)
                 throw std::runtime_error("Error: invalid server2");
             add_default_location(server);
             check_duplacate_locations(server);
+            check_paths(server);
             servers.push_back(server);
             server_n++;
         }
@@ -370,7 +398,7 @@ void parse_config(int ac, char **av)
     }
     if (servers.size() == 0)
         throw std::runtime_error("Error: no server");
-    // return servers;
+    
 }
 
 
