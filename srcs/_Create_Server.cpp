@@ -1,4 +1,7 @@
-#include "webserv.hpp"
+#include "../includes/webserv.hpp"
+
+
+
 
 // void _Print_req(Request &req)
 // {
@@ -44,61 +47,121 @@
 // }
 
 
+
 void _Create_Servers()
 {
-    int fd = -1;
     int opt = 1;
-    for (int i = 0; i < servers.size(); i++)
+
+    // Map to keep track of existing sockets for host:port combinations
+    std::map<std::pair<std::string, int>, int> host_port_to_fd;
+
+    // Map from socket fd to server configurations
+    std::map<int, std::vector<Serv>> socket_to_servers;
+
+    for (size_t i = 0; i < servers.size(); ++i)
     {
-        try 
+        try
         {
             int port = servers[i].getPort();
             std::string host = servers[i].getHost();
-            std::string server_name = servers[i].getServerName()[0];
-            fd = socket(AF_INET, SOCK_STREAM, 0);
-            if (fd == -1)
-                throw std::runtime_error("Error: socket() failed");
-            if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
-                throw std::runtime_error("setsockopt failed");
-            servers[i].addr.sin_family = AF_INET;
-            servers[i].addr.sin_port = htons(port);
-            servers[i].addr.sin_addr.s_addr = htonl(INADDR_ANY);
-            if (bind(fd, (struct sockaddr *)&servers[i].addr, sizeof(servers[i].addr)) == -1)
-                std::cerr << "bind failed" << std::endl;
-            if (listen(fd, 10) == -1)
-                throw std::runtime_error("Error: listen() failed");
-            if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
-                throw std::runtime_error("fcntl F_SETFL failed");
-            
-            servers[i].setFd(fd);
+            std::pair<std::string, int> host_port = std::make_pair(host, port);
+
+            int fd;
+            if (host_port_to_fd.find(host_port) == host_port_to_fd.end())
+            {
+                // Create new socket
+                fd = socket(AF_INET, SOCK_STREAM, 0);
+                if (fd == -1)
+                    throw std::runtime_error("Error: socket() failed");
+                if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+                {
+                    close(fd);
+                    throw std::runtime_error("setsockopt failed");
+                }
+
+                // Prepare sockaddr_in
+                struct sockaddr_in address;
+                memset(&address, 0, sizeof(address));
+                address.sin_family = AF_INET;
+                address.sin_port = htons(port);
+
+                // Convert host to IP address (assume IPv4 address in string format)
+                // Implement custom IP address parser if needed
+                address.sin_addr.s_addr = inet_addr(host.c_str());
+                if (address.sin_addr.s_addr == INADDR_NONE)
+                {
+                    close(fd);
+                    throw std::runtime_error("Invalid IP address");
+                }
+
+                // Bind socket
+                if (bind(fd, (struct sockaddr*)&address, sizeof(address)) == -1)
+                {
+                    close(fd);
+                    throw std::runtime_error("bind failed");
+                }
+
+                // Listen on socket
+                if (listen(fd, SOMAXCONN) == -1)
+                {
+                    close(fd);
+                    throw std::runtime_error("listen failed");
+                }
+
+                // Set socket to non-blocking
+                if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
+                {
+                    close(fd);
+                    throw std::runtime_error("fcntl failed");
+                }
+
+                // Store the fd
+                host_port_to_fd[host_port] = fd;
+                socket_to_servers[fd].push_back(servers[i]);
+                servers[i].setFd(fd);
+            }
+            else
+            {
+                // Reuse existing socket fd
+                fd = host_port_to_fd[host_port];
+                socket_to_servers[fd].push_back(servers[i]);
+                servers[i].setFd(fd);
+            }
         }
-        catch (std::exception &e)
+        catch (const std::exception& e)
         {
-            std::cout << e.what() << std::endl;
+            std::cerr << "Error in _Create_Servers: " << e.what() << std::endl;
         }
     }
 }
 
-int get_server_index(int fd)
+
+
+int get_server_index(int fd, string &host)
 {
+    
     for (int i = 0; i < servers.size(); i++)
     {
-        if (servers[i].getFd() == fd)
-            return i;
+        for (size_t j = 0; j < servers[i].getServerName().size(); j++)
+        {
+            size_t pos = servers[i].getServerName()[j].find(":");
+            size_t pos2 = host.find(":");
+            if (pos2 != string::npos)
+            {
+                if (host.substr(pos2 + 1) == std::to_string(servers[i].getPort()) &&
+                    servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // HERE warrning !!!!!!!!!!!!!!!
+                    {
+                        return i;
+                    }
+            }
+            else if (servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2))
+            {
+                return i;
+            }
+        }
     }
-    return -1;
+    return 0;
 }
-
-
-struct Data
-{
-    int fd;
-    Request req;
-    std::ifstream file_stream;
-    size_t file_offset;
-    bool sending_file;
-    // Other members...
-};
 
 #define SEND_BUFFER_SIZE 2048
 #define TIMEOUT 30
@@ -140,7 +203,7 @@ void _Run_Server()
         event.events = EPOLLIN;
         event.data.fd = servers[i].getFd();
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, servers[i].getFd(), &event) == -1)
-            throw std::runtime_error("epoll_ctl failed");
+            std::cerr << "epoll_ctl failed: " << strerror(errno) << std::endl;
     }
 
     std::map<int, Client *> clients;
@@ -173,9 +236,9 @@ void _Run_Server()
                         throw std::runtime_error("fcntl F_GETFL failed");
                     if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1)
                         throw std::runtime_error("fcntl F_SETFL failed");
-                    int server_fd = events[i].data.fd;
-                    int index = get_server_index(server_fd);
-                    Client *client = new Client(client_fd, addr, index);
+                    // int server_fd = events[i].data.fd;
+                    // int index = get_server_index(server_fd);
+                    Client *client = new Client(client_fd, addr, -1);
                     client->header_flag = false;
                     event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLOUT;
                     event.data.fd = client_fd;
@@ -187,6 +250,7 @@ void _Run_Server()
                     }
                     clients[client_fd] = client;
                     std::cout << "New connection from " << client->get_ip() << ":" << client->get_port() << std::endl;
+                    // std::cout << "new connection to server = " << servers[index].getPort() << servers[index].getServerName()[0] << std::endl;
                 }
             }
             else
@@ -221,9 +285,17 @@ void _Run_Server()
                     char *buffer = clients[client_fd]->get_buffer();
                     std::vector<char> buf(buffer, buffer + ret);
                     clients[client_fd]->req.fill_request(buf);
+                    
                 }
                 else if (events[i].events & EPOLLOUT && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                 {
+                    std::cout << "clietns request host == " << clients[client_fd]->req.get_Host() << std::endl;
+                    int server_fd = events[i].data.fd;
+                    int index = get_server_index(server_fd, clients[client_fd]->req.get_Host());
+                    // cout << "index == " << index << endl;
+                    clients[client_fd]->req.set_server_index(index);
+
+                    std::cout << "server index == " << index << std::endl;
                     try
                     {
                         if (clients[client_fd]->req.get_method() == "GET")
