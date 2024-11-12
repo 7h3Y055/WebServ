@@ -25,8 +25,7 @@ class CGI
 	public:
 		void		init(void);
 		int			execute(void);
-		string		get_output(void);
-		Response	*parse_response(void);
+		Response	*get_response(void);
 		CGI(Request &req, string &path, location &loc, Client &client) 
 		: _req(req) , _path(path), _loc(loc), _clients(client) {};
 		~CGI() {};
