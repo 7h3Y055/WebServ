@@ -151,9 +151,6 @@ int get_server_index(int fd, string &host)
     return 0;
 }
 
-#define SEND_BUFFER_SIZE 2048
-#define TIMEOUT 2
-
 void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
 {
     time_t current_time = time(NULL);
@@ -202,7 +199,6 @@ void _Run_Server()
 
     std::map<int, Client *> clients;
 
-    int k = 0;
     std::vector<int> clients_response;
     while (true)
     {
@@ -210,7 +206,6 @@ void _Run_Server()
         if (num_events == -1)
             throw std::runtime_error("epoll_wait failed");
         _Check_for_timeout(clients, epoll_fd);
-        std::cout << "heeeere  == " << k++ << std::endl;
         for (int i = 0; i < num_events; i++)
         {
             if (std::find(fds.begin(), fds.end(), events[i].data.fd) != fds.end())

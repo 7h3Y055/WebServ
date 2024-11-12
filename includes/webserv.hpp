@@ -38,14 +38,13 @@
 #include "_Get.hpp"
 #include "client.hpp"
 
+
+#define SEND_BUFFER_SIZE 2048
+#define TIMEOUT 30
+
 using namespace std;
 
-
-
 extern vector <Serv> servers;
-
-
-
 
 void _Create_Servers();
 void _Run_Server();
