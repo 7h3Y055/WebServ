@@ -12,6 +12,7 @@
 11) catch http error codes              DONE
 13) add Date: Header                    DONE
 14) Redirection                         DONE
+15) remove temprary file wen time out
 
 
 
