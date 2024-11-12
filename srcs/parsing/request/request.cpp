@@ -155,8 +155,8 @@ bool is_CGI(std::string file_name, size_t index){
 void    Request::fill_request(std::vector<char> &buf){
     _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
     std::string line;
-    static bool chunked_state = false;
-    static unsigned long long chunked_length;
+    // static bool chunked_state = false;
+    // static unsigned long long chunked_length = 0;
     
     while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
     {
@@ -220,8 +220,10 @@ void    Request::fill_request(std::vector<char> &buf){
         }
         if (_request_state == HTTP_BODY){
             ofstream file;
-            if (_Body_path.size() == 0)
+            if (_Body_path.size() == 0){
                 _Body_path =  generate_random_name();
+                cout << "Create: " << _Body_path << endl;
+            }
             file.open(_Body_path.c_str(), std::ios::app);
             if (!file.is_open())
                 throw 500;
@@ -384,7 +386,7 @@ std::string &Request::get_body_path(){
 
 
 
-Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _Host_found(false){
+Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _Host_found(false), _Fixed_length(0), chunked_state(false), chunked_length(0){
 }
 
 Request::~Request(){

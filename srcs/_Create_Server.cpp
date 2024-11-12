@@ -196,6 +196,10 @@ void _Run_Server()
                 if (events[i].events & (EPOLLRDHUP | EPOLLHUP))
                 {
                     std::cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
+                    if (clients[client_fd]->get_req().get_body_path().size() != 0){
+                        cout << "Remove: " << clients[client_fd]->get_req().get_body_path() << endl;  
+                        remove(clients[client_fd]->get_req().get_body_path().c_str());
+                    }
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                     delete clients[client_fd];
                     clients.erase(client_fd);
@@ -210,6 +214,10 @@ void _Run_Server()
                     if (ret == 0)
                     {
                         std::cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
+                        if (clients[client_fd]->get_req().get_body_path().size() != 0){
+                            cout << "Remove: " << clients[client_fd]->get_req().get_body_path() << endl;  
+                            remove(clients[client_fd]->get_req().get_body_path().c_str());
+                        }
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                         delete clients[client_fd];
                         clients.erase(client_fd);
@@ -220,7 +228,24 @@ void _Run_Server()
                     clients[client_fd]->set_read_pos(clients[client_fd]->get_read_pos() + ret);
                     char *buffer = clients[client_fd]->get_buffer();
                     std::vector<char> buf(buffer, buffer + ret);
-                    clients[client_fd]->req.fill_request(buf);
+
+
+
+
+                    try
+                    {
+                        clients[client_fd]->req.fill_request(buf);
+                    }
+                    catch(...)
+                    {
+                        std::cerr << "ERROR !!!!!!!!!!!!!!!!" << client_fd << '\n';
+                    }
+
+
+
+
+
+
                 }
                 else if (events[i].events & EPOLLOUT && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                 {
