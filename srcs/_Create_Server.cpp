@@ -152,15 +152,15 @@ int get_server_index(int fd, string &host)
 }
 
 #define SEND_BUFFER_SIZE 2048
-#define TIMEOUT 30
+#define TIMEOUT 2
 
-void _Check_for_timeout(std::map<int, Client *> &clients, int epoll_fd)
+void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
 {
     time_t current_time = time(NULL);
     std::map<int, Client *>::iterator it = clients.begin();
     while (it != clients.end())
     {
-        if (current_time - it->second->get_last_read() > TIMEOUT)
+        if ( it->second && current_time - it->second->get_last_read() > TIMEOUT)
         {
             std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
@@ -202,6 +202,7 @@ void _Run_Server()
 
     std::map<int, Client *> clients;
 
+    int k = 0;
     std::vector<int> clients_response;
     while (true)
     {
@@ -209,6 +210,7 @@ void _Run_Server()
         if (num_events == -1)
             throw std::runtime_error("epoll_wait failed");
         _Check_for_timeout(clients, epoll_fd);
+        std::cout << "heeeere  == " << k++ << std::endl;
         for (int i = 0; i < num_events; i++)
         {
             if (std::find(fds.begin(), fds.end(), events[i].data.fd) != fds.end())
@@ -277,7 +279,7 @@ void _Run_Server()
                     clients[client_fd]->req.fill_request(buf);
                     
                 }
-                else if (events[i].events & EPOLLOUT && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
+                else if (events[i].events & EPOLLOUT && clients[client_fd] && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                 {
                     int server_fd = events[i].data.fd;
                     int index = get_server_index(server_fd, clients[client_fd]->req.get_Host());
@@ -298,7 +300,7 @@ void _Run_Server()
                             if (access(path.c_str(), F_OK) == -1)
                             {
                                 std::cout << "have no access == " << path << std::endl;
-                                throw 403;
+                                throw 404;
                             }
                             std::vector<std::string> index = loc.getIndex();
                             for (size_t i = 0; i < index.size(); i++)
