@@ -18,28 +18,37 @@ location get_location(std::string file_name, Serv &config)
     return loc;
 }
 
+int my_rand()
+{
+    char c;
+    std::ifstream random("/dev/urandom");
+    random.read(&c, 1);
+    random.close();
+    return c;
+}
+
 std::string generate_random_name()
 {
-    std::string name = "temp_"; //HERE
-    std::string base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    std::string name; 
+    std::string base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
 
-    while (true)
-    {
-        name = "temp_"; // HERE
-        for (size_t n = 0; n < 8; n++)
-            name += base[rand() % base.size()];
-        std::ifstream file(name.c_str());
-        if (!file.is_open())
+    while (true){
+        name = "/tmp/temp_"; //HERE
+        for (size_t n = 0; n < 64; n++)
+            name += base[my_rand() % base.size()];
+        if (access(name.c_str(), F_OK) == -1)
             return name;
     }
-    
 }
 
 
 void move(std::string src, std::string dst){
-    ifstream in(src.c_str());
     ofstream out(dst.c_str(), std::ios::binary);
-
+    if (src.size() == 0){
+        out.close();
+        return ;
+    }
+    ifstream in(src.c_str());
     if (!in.is_open() || !out.is_open())
         throw 500;
     out << in.rdbuf();
@@ -53,12 +62,12 @@ void move(std::string src, std::string dst){
 Response *Request::post_Response(){
     location loc = get_location(get_file_name(), servers[get_server_index()]);
 
-    throw 12;
     if (find(loc.getMethods().begin(), loc.getMethods().end(), "POST") != loc.getMethods().end())
     {
         if (loc.getUploadPath().size() != 0){
             std::string path = loc.getRoot() + "/" + loc.getUploadPath();
-            path = path + "/" + generate_random_name() + get_extention(*this);
+            path = path + "/" + _Body_path.substr(5) + get_extention(*this);
+            cout << "Path: " << path << endl;
             move(_Body_path, path);
         }
         else

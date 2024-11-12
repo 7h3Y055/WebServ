@@ -125,10 +125,6 @@ bool buffer_have_nl(std::vector<char> &buf){
 }
 
 std::string get_http_line(std::vector<char> *buf){
-    // size_t pos = string(buf->begin(), buf->end()).find("\r\n");
-    // string s = string(buf->begin(), buf->end()).substr(0, pos);
-    // return s;
-
     std::string line;
     for (size_t i = 0; i < buf->size() - 1; i++){
         if ((*buf)[i] == '\r' && (*buf)[i + 1] == '\n'){
@@ -224,24 +220,21 @@ void    Request::fill_request(std::vector<char> &buf){
         }
         if (_request_state == HTTP_BODY){
             ofstream file;
-            if (_Body_path.size() == 0){
-                do{
-                    file.close();
-                    _Body_path = "/tmp/" + generate_random_name();
-                    file.open(_Body_path.c_str());
-                } while (file.is_open() == 0);
-            }
+            if (_Body_path.size() == 0)
+                _Body_path =  generate_random_name();
             file.open(_Body_path.c_str(), std::ios::app);
-                if (!file.is_open())
-                    throw 500;
+            if (!file.is_open())
+                throw 500;
             if (_Transfer_Mechanism == "Fixed"){
                 size_t size = (_Fixed_length < _Buffer.size() ? _Fixed_length : _Buffer.size());
-                file.write(&(*_Buffer.begin()),  size);
+                file.write(&(*_Buffer.begin()), size);
+                if (file.fail())
+                    throw 500;
                 _Buffer.erase(_Buffer.begin(), _Buffer.begin() + size);
-                std::streampos pos = file.tellp();
-                if (pos == _Fixed_length){
+                if (file.tellp() == _Fixed_length){
                     _request_state = HTTP_COMPLETE;
-                }
+                } else if (file.tellp() > _Fixed_length)
+                    throw 413;
             }
             else if (_Transfer_Mechanism == "Chunked"){
                 if (chunked_state == false){
