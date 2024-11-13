@@ -11,4 +11,3 @@ Response &default_res(Request &req);
 bool is_it_a_cgi(std::string path);
 std::string  fill_exts(std::string key);
 std::vector<char> generate_header(std::ifstream &file, std::string path);
-std::string _to_string(int n);

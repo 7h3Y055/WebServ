@@ -40,13 +40,14 @@
 #include "delete.hpp"
 #include "cgi.hpp"
 
-
-#define SEND_BUFFER_SIZE 2048
-#define TIMEOUT 30
-
 using namespace std;
 
+
+
 extern vector <Serv> servers;
+
+
+
 
 void _Create_Servers();
 void _Run_Server();

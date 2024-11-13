@@ -291,6 +291,8 @@ void set_default_error_pages(Serv &server){
         server.getErrorPages()["413"] = "error_pages/413.html";
     if (server.getErrorPages().find("409") == server.getErrorPages().end())
         server.getErrorPages()["409"] = "error_pages/413.html";
+    if (server.getErrorPages().find("201") == server.getErrorPages().end())
+        server.getErrorPages()["201"] = "error_pages/201.html";
 }
 
 void add_default_location(Serv &server){
@@ -325,22 +327,22 @@ void check_duplacate_locations(Serv &server){
 
 void check_paths(Serv &server){
 
-    // if (!pathExists(server.getRoot()))
-    //     throw std::runtime_error("Error: invalid root '" + server.getRoot() + "'");
-    // for (map<string, string>::iterator it = server.getErrorPages().begin(); it != server.getErrorPages().end(); ++it) {
-    //     if (!pathExists(it->second))
-    //         throw std::runtime_error("Error: invalid error page '" + it->second + "'");
-    // }
-    // for (size_t i = 0; i < server.getLocations().size(); ++i) {
-    //     if (!pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getPath()))
-    //         throw std::runtime_error("Error: invalid location root '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getPath() + "'");
-    //     if (server.getLocations()[i].getUploadPath() != "" && !pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath()))
-    //         throw std::runtime_error("Error: invalid upload path '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath() + "'");
-    //     for (map<string, string>::iterator it = server.getLocations()[i].getCgi().begin(); it != server.getLocations()[i].getCgi().end(); ++it) {
-    //         if (!pathExecutable(it->second))
-    //             throw std::runtime_error("Error: invalid cgi '" + it->second + "'");
-    //     }
-    // }
+    if (!pathExists(server.getRoot()))
+        throw std::runtime_error("Error: invalid root '" + server.getRoot() + "'");
+    for (map<string, string>::iterator it = server.getErrorPages().begin(); it != server.getErrorPages().end(); ++it) {
+        if (!pathExists(it->second))
+            throw std::runtime_error("Error: invalid error page '" + it->second + "'");
+    }
+    for (size_t i = 0; i < server.getLocations().size(); ++i) {
+        if (!pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getPath()))
+            throw std::runtime_error("Error: invalid location root '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getPath() + "'");
+        if (server.getLocations()[i].getUploadPath() != "" && !pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath()))
+            throw std::runtime_error("Error: invalid upload path '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath() + "'");
+        for (map<string, string>::iterator it = server.getLocations()[i].getCgi().begin(); it != server.getLocations()[i].getCgi().end(); ++it) {
+            if (!pathExecutable(it->second))
+                throw std::runtime_error("Error: invalid cgi '" + it->second + "'");
+        }
+    }
 }
 
 void parse_config(int ac, char **av)

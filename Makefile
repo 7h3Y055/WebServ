@@ -2,7 +2,7 @@ NAME = webserv
 
 CXX = c++
 
-CXXFLAGS = -g3#-std=c++98 -g3#-fsanitize=address #-Wall -Wextra
+CXXFLAGS = #-std=c++98  -g3 #-fsanitize=address #-Wall -Wextra -Werror
 
 SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
 	srcs/_Create_Server.cpp srcs/methods/_Post/post.cpp \
@@ -13,13 +13,13 @@ SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
 
 INC = -Iincludes
 
-CONFIG_FILE = conf/default.conf
-
 OBJ = $(SRC:.cpp=.o)
 
-# .SILENT:
+.SILENT:
 
 all: $(NAME)
+	# @clear
+	@./$(NAME) | cat -e
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
@@ -40,9 +40,3 @@ fclean: clean
 re: fclean all clean
 
 .PHONY: all clean fclean re
-
-r: $(NAME)
-	@clear
-	@./$(NAME) $(CONFIG_FILE)
-
-.SECONDARY: $(OBJ)

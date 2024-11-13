@@ -37,6 +37,11 @@ class Request
         int server_index;
     public:
 
+
+        bool chunked_state;
+        unsigned long long chunked_length;
+
+
         void fill_request(std::vector<char> &buf);
         Response *execute_request();
 

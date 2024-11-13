@@ -57,13 +57,14 @@ std::string get_error_message(int code){
     }
 }
 
-std::string get_error_path(int code){
+std::string get_error_path(int code, int index){
     if (!(code < 999 && code > 0))
         throw 500;
     string str;
     stringstream ss;
     ss << code;
-    return "error_pages/" + ss.str() +".html";
+    return servers[index].getErrorPages()[ss.str()];
+    // return "error_pages/" + ss.str() +".html";
 }
 
 std::vector<char> get_error_body(const std::string& filename) {
@@ -91,7 +92,7 @@ Response *createResponse(int code, Request *req){
     res->set_status_message(get_error_message(code));
     res->set_header("Content-Type", "text/html");
     // 
-    std::vector<char> body = get_error_body(get_error_path(code));
+    std::vector<char> body = get_error_body(get_error_path(code, req->get_server_index()));
     res->set_body(body);
     return res;
 }
