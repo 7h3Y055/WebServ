@@ -318,7 +318,7 @@ void _Run_Server()
                             else if(is_cgi && is_it_a_cgi(path))
                             {
                                 cout << "CGI is done" << endl;
-                                CGI cgi(clients[client_fd]->req, path, loc, *clients[client_fd]);
+                                CGI cgi(clients[client_fd]->req, loc);
                                 cgi.execute();
                                 Response* res = cgi.get_response();
                                 std::vector<char> response_binary = res->get_response();
