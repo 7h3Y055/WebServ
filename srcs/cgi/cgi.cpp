@@ -63,6 +63,7 @@ void	CGI::init(void)
 	) == -1 ? throw 500 : 0;
 
 	_body_path = _req.get_body_path();
+	_path = _loc.getRoot() + _req.get_file_name();
 	_filename = _req.get_file_name().c_str();
 	_cgi_path = _loc.getCgi().at(_filename.substr(_filename.find_last_of('.')));
 	_content_length = _req.get_fixed_length();
