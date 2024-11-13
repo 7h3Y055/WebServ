@@ -9,9 +9,8 @@ int	run_cgi(Request &req);
 class CGI
 {
 	private:
-		string&		_path;
+		string		_path;
 		location&	_loc;
-		Client&		_clients;
 		Request&	_req;
 		string		_filename;
 		string		_cgi_path;
@@ -26,8 +25,8 @@ class CGI
 		void		init(void);
 		int			execute(void);
 		Response	*get_response(void);
-		CGI(Request &req, string &path, location &loc, Client &client) 
-		: _req(req) , _path(path), _loc(loc), _clients(client) {};
+		CGI(Request &req, location &loc) 
+		: _req(req) , _loc(loc) {};
 		~CGI() {};
 };
 
