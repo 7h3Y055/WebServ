@@ -6,7 +6,7 @@ location get_location(std::string file_name, Serv &config)
     int loc_n = 0;
     for (size_t i = 0; i < config.getLocations().size(); i++)
     {
-        if (strncmp(file_name.c_str(), config.getLocations()[i].getPath().c_str(), config.getLocations()[i].getPath().size()) == 0)
+        if (file_name.find(config.getLocations()[i].getPath()) != string::npos)
         {
             if (config.getLocations()[i].getPath().size() > loc_n)
             {
@@ -53,6 +53,14 @@ void move(std::string src, std::string dst){
     ifstream in(src.c_str());
     if (!in.is_open() || !out.is_open())
         throw 500;
+    
+    in.seekg(0, std::ios::end);
+    if (in.tellg() == 0){
+        in.close();
+        throw 204;
+    }
+    in.seekg(0, std::ios::beg);
+
     out << in.rdbuf();
     in.close();
     out.close();
@@ -67,9 +75,13 @@ Response *Request::post_Response(){
     if (find(loc.getMethods().begin(), loc.getMethods().end(), "POST") != loc.getMethods().end())
     {
         if (loc.getUploadPath().size() != 0){
+            if (_Body_path.size() < 1)
+                throw 204;
+
             std::string path = loc.getRoot() + "/" + loc.getUploadPath();
             path = path + "/" + _Body_path.substr(5) + get_extention(*this);
             cout << "Path: " << path << endl;
+
             move(_Body_path, path);
         }
         else

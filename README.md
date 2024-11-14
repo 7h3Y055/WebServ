@@ -13,6 +13,7 @@
 13) add Date: Header                    DONE
 14) Redirection                         DONE
 15) remove temprary file wen time out
+16) check if error page is .html
 
 
 
