@@ -247,6 +247,8 @@ void    Request::fill_request(std::vector<char> &buf){
                     }
                     std::string len = get_http_line(&_Buffer);
                     chunked_length = hex2ll(len);
+                    if (chunked_length > 65536)
+                        throw 413;
                     chunked_state = true;
                     if (chunked_length == 0){
                         _request_state = HTTP_COMPLETE;

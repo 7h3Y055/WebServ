@@ -112,6 +112,10 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int epoll_fd)
         if (current_time - it->second->get_last_read() > TIMEOUT)
         {
             std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
+            if (it->second->get_req().get_body_path().size() != 0){
+                cout << "Remove: " << it->second->get_req().get_body_path() << endl;
+                remove(it->second->get_req().get_body_path().c_str());
+            }
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
             delete it->second;
             close(it->first);

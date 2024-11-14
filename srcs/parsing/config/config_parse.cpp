@@ -225,10 +225,12 @@ void init_server(Serv &server, std::vector<string> &strs){
             throw std::runtime_error("Error: invalid error_page");
         if (server.getErrorPages().find(error_page[0]) != server.getErrorPages().end())
             throw std::runtime_error("Error: duplicate error_page");
+        if (error_page[1].size() < 5 || error_page[1].substr(error_page[1].size() - 5) != ".html")
+            throw std::runtime_error("Error: invalid error_page");
         server.getErrorPages()[error_page[0]] = error_page[1];
     }
     else{
-        throw std::runtime_error("Error: invalid server4");
+        throw std::runtime_error("Error: invalid server");
     }
 }
 
