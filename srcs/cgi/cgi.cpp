@@ -99,6 +99,10 @@ Response*	CGI::get_response(void)
 		else
 			content = _output.substr(heaers_end_pos + 4, content_length);
 	}
+	res->body_file_path_ref() = generate_random_name();
+	ofstream file(res->body_file_path_ref().c_str());
+	file << content;
+	file.close();
 	res->set_status_code(200);
 	res->set_status_message("OK");
 	std::vector<char> body(content.begin(), content.end());
