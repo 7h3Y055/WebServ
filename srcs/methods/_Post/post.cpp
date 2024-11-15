@@ -70,8 +70,9 @@ void move(std::string src, std::string dst){
 
 
 Response *Request::post_Response(){
+    Response *res = new Response(*this);
     location loc = get_location(get_file_name(), servers[get_server_index()]);
-
+    string location_header;
     if (find(loc.getMethods().begin(), loc.getMethods().end(), "POST") != loc.getMethods().end())
     {
         if (loc.getUploadPath().size() != 0){
@@ -80,8 +81,7 @@ Response *Request::post_Response(){
 
             std::string path = loc.getRoot() + "/" + loc.getUploadPath();
             path = path + "/" + _Body_path.substr(5) + get_extention(*this);
-            cout << "Path: " << path << endl;
-
+            location_header = loc.getUploadPath() + "/" + _Body_path.substr(5) + get_extention(*this);
             move(_Body_path, path);
         }
         else
@@ -90,7 +90,12 @@ Response *Request::post_Response(){
     else
         throw 405;
 
-    return createResponse(201, this);
+    res->set_status_code(201);
+    res->set_status_message("Created");
+    res->set_header("Location", location_header);
+    vector<char> body;
+    res->set_body(body);
+    return res;
 }
 
 
