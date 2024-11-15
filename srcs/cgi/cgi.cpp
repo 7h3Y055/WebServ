@@ -7,8 +7,6 @@ int CGI::execute(void)
 
 	if (pipe(_fd) == -1) // create pipe
 		throw 500;
-	// cout << "cgi path :" << _cgi_path << endl;
-	// cout << "path :" << _path << endl;
 	if ((_cgi_child = fork()) == -1) // fork process
 		throw 500;
 	if (_cgi_child == 0) // child process
@@ -67,9 +65,9 @@ void	CGI::init(void)
 		setenv("REQUEST_METHOD", _req.get_method().c_str(), 1) |
 		setenv("SCRIPT_FILENAME", _path.c_str(), 1) |
 		setenv("PATH_TRANSLATED", _path.c_str(), 1) |
+		setenv("PATH_INFO", _path.c_str(), 1) |
 		setenv("SCRIPT_NAME", _path.c_str(), 1) |
-		setenv("QUERY_STRING", _req.get_URI().substr(_req.get_file_name().length()).c_str(), 1) |
-		setenv("REMOTE_ADDR", _req.get_header("Host").c_str(), 1)
+		setenv("QUERY_STRING", _req.get_URI().substr(_req.get_file_name().length()).c_str(), 1)
 	) == -1 ? throw 500 : 0;
 }
 
