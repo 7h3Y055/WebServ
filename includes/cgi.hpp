@@ -20,6 +20,8 @@ class CGI
 		int			_status;
 		pid_t		_cgi_child;
 		int			_stdout_copy;
+		int			_stderr_copy;
+		int			_stdin_copy;
 		string		_output;
 	public:
 		void		init(void);

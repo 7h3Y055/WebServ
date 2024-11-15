@@ -65,7 +65,7 @@ void    delete_file(const char *path) {
 	throw 204; // No Conten
 }
 
-string  to_string(ssize_t nbr)
+string  DEL::to_string(ssize_t nbr)
 {
     std::stringstream ss;
     ss << nbr;

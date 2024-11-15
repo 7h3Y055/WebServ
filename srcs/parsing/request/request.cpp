@@ -311,7 +311,9 @@ Response *Request::execute_request(){
 
     if (is_request_CGI()){
         std::cout << "[CGI]" << std::endl;
-        // return CGI_Response();
+        CGI cgi(*this, loc);
+        cgi.execute();
+        return cgi.get_response();
     }
     else if (_Method == "GET"){
         std::cout << "[GET]" << std::endl;

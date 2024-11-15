@@ -2,8 +2,8 @@
 import cgi
 
 # Ensure the correct content-type header is printed for HTML
-print("Content-Type: text/html\n")
-
+print("Content-Type: text/html\r")
+print("\r")
 # HTML output with a dynamic floral design
 html_content = """
 <!DOCTYPE html>
