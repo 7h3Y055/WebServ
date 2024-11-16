@@ -136,19 +136,28 @@ std::string get_http_line(std::vector<char> *buf){
     return line;
 }
 
-bool is_CGI(std::string file_name, size_t index){
-    file_name.reserve();
-    
-    size_t pos = file_name.find_last_of('.');
+bool is_CGI(std::string file_name, size_t index, size_t start_pos){
+    location loc = get_location(file_name, servers[index]);
+    if (loc.getCgi().size() == 0 || start_pos >= file_name.size())
+        return false;
+    size_t i = start_pos;
+    for (; file_name[i] == '/'; i++);
+    string file = file_name.substr(i);
+
+    size_t pos2 = file.find_first_of('/');
+    size_t pos = file.find_last_of('.', pos2);
     if (pos == std::string::npos)
         return false;
-    file_name.reserve();
-    string extention = file_name.substr(pos, file_name.size());
-    location loc = get_location(file_name, servers[index]);
-    
-    if (loc.getCgi()[extention].size() != 0)
-        return true;
 
+    string extention = file.substr(pos, pos2 - pos);
+    if (loc.getCgi()[extention].size() != 0){
+        cout << "CGI: " << file << endl;
+        return true;
+    }
+    else if (pos2 != std::string::npos){
+        return is_CGI(file_name, index, pos2 + 1);
+    }
+    
     return false;
 }
 
@@ -172,7 +181,7 @@ void    Request::fill_request(std::vector<char> &buf){
                 _File_name = _URI.substr(0, _URI.find('?'));
                 if (_File_name.find("..") != string::npos)
                     throw 403;
-                _is_request_CGI = is_CGI(_File_name, get_server_index());
+                _is_request_CGI = is_CGI(_File_name, get_server_index(), 0);
             }
             else{
                 throw 400;

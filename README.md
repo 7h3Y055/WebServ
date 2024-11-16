@@ -12,13 +12,13 @@
 11) catch http error codes              DONE
 13) add Date: Header                    DONE
 14) Redirection                         DONE
-15) remove temprary file wen time out
-16) check if error page is .html
+15) remove temprary file wen time out   DONE
+16) check if error page is .html        DONE
 
 
 
 12) http://x.com/index.php/var?q=1       ↻ 
-13) Location header pointing to the new resource.
+13) Location header pointing to the new resource. DONE
 
 
 
