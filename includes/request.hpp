@@ -1,4 +1,4 @@
-#pragma one
+#pragma once
 
 
 
@@ -19,11 +19,10 @@ class Request
 {
     private:
         RequestState _request_state;
-        bool _is_request_CGI;
+        // bool _is_request_CGI;
         int _Host_found;
 
         std::vector<char> _Buffer;
-        // std::vector<char> _Chunked_Buffer;
         std::string _Method;
         std::string _Transfer_Mechanism;
         long long _Fixed_length;
@@ -33,22 +32,17 @@ class Request
         std::string _Host;
         std::map<std::string, std::string> _Headers;
         std::string _Body_path;
-
         int server_index;
     public:
-
-
         bool chunked_state;
         unsigned long long chunked_length;
-
-
         void fill_request(std::vector<char> &buf);
         Response *execute_request();
 
         Response *post_Response();
 
         RequestState &request_state();
-        bool is_request_CGI();
+        // bool is_request_CGI();
         std::string &get_method();
         std::string &get_version();
         std::string &get_file_name();

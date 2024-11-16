@@ -209,7 +209,7 @@ void    Request::fill_request(std::vector<char> &buf){
                 _File_name = _URI.substr(0, _URI.find('?'));
                 if (_File_name.find("..") != string::npos)
                     throw 403;
-                _is_request_CGI = is_CGI(_File_name, get_server_index(), 0);
+                // _is_request_CGI = is_CGI(_File_name, get_server_index(), 0);
             }
             else{
                 throw 400;
@@ -243,6 +243,7 @@ void    Request::fill_request(std::vector<char> &buf){
                     _request_state = HTTP_COMPLETE;
                 }
                 else{
+                    set_server_index(get_server_index_(get_Host()));
                     _request_state = HTTP_BODY;
                 }
                 continue ;
@@ -265,7 +266,7 @@ void    Request::fill_request(std::vector<char> &buf){
             if (!file.is_open())
                 throw 500;
             if (_Transfer_Mechanism == "Fixed"){
-                size_t size = (_Fixed_length < _Buffer.size() ? _Fixed_length : _Buffer.size());
+                size_t size = (static_cast<size_t>(_Fixed_length) < _Buffer.size() ? _Fixed_length : _Buffer.size());
                 file.write(&(*_Buffer.begin()), size);
                 if (file.fail())
                     throw 500;
@@ -301,6 +302,7 @@ void    Request::fill_request(std::vector<char> &buf){
                 }
             }
             if (file.tellp() > servers[server_index].getClientMaxBodySize()){
+                cout << "file.tellp() == " << file.tellp() << " > " << server_index << endl;
                 file.close();
                 throw 413;
             }
@@ -332,14 +334,10 @@ Response *create_redirection(location &loc, Request &req){
 Response *Request::execute_request(){
     location loc = get_location(get_file_name(), servers[get_server_index()]);
 
-    cout << get_file_name() << endl;
-
     if (loc.getRedirection().size() == 1){
         cout << "[Redirection]" << endl;
         return create_redirection(loc, *this);
     }
-
-
     size_t i;
     for (i = 0; i < loc.getMethods().size(); i++)
         if (loc.getMethods()[i] == _Method)
@@ -348,15 +346,8 @@ Response *Request::execute_request(){
         throw 405;
     
 
-    if (is_request_CGI()){
-        std::cout << "[CGI]" << std::endl;
-        // return CGI_Response();
-    }
-    else if (_Method == "GET"){
-        std::cout << "[GET]" << std::endl;
-        return get_Response(*this);
-    }
-    else if (_Method == "POST"){
+
+    if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;
         return post_Response();
     }
@@ -373,9 +364,9 @@ RequestState &Request::request_state(){
     return this->_request_state;
 }
 
-bool Request::is_request_CGI(){
-    return this->_is_request_CGI;
-}
+// bool Request::is_request_CGI(){
+//     return this->_is_request_CGI;
+// }
 
 std::string &Request::get_method(){
     return this->_Method;
@@ -425,7 +416,7 @@ std::string &Request::get_body_path(){
 
 
 
-Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _Host_found(false), _Fixed_length(0), chunked_state(false), chunked_length(0){
+Request::Request(): _request_state(HTTP_REQUEST_LINE), _Host_found(false), _Fixed_length(0), chunked_state(false), chunked_length(0){
 }
 
 Request::~Request(){
