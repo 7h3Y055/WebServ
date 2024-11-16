@@ -54,3 +54,4 @@ std::string get_extention(Request &req);
 std::string generate_random_name();
 Response *createResponse(int code, Request *req);
 location get_location(std::string file_name, Serv &config);
+string get_CGI_script(std::string file_name, size_t index, size_t start_pos);

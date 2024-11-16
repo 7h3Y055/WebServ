@@ -257,6 +257,7 @@ void _Run_Server()
                     {
                         if (clients[client_fd]->req.get_method() == "GET")
                         {
+                            cout << "GET: " << get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) << endl;
                             bool is_cgi = false;
                             std::string resources = clients[client_fd]->req.get_URI();
                             location loc = find_best_location(servers[clients[client_fd]->req.get_server_index()].getLocations(), resources);

@@ -140,25 +140,53 @@ bool is_CGI(std::string file_name, size_t index, size_t start_pos){
     location loc = get_location(file_name, servers[index]);
     if (loc.getCgi().size() == 0 || start_pos >= file_name.size())
         return false;
+
     size_t i = start_pos;
+
     for (; file_name[i] == '/'; i++);
     string file = file_name.substr(i);
+    size_t pos2 = file.find_first_of('/', start_pos);
 
-    size_t pos2 = file.find_first_of('/');
     size_t pos = file.find_last_of('.', pos2);
-    if (pos == std::string::npos)
-        return false;
-
-    string extention = file.substr(pos, pos2 - pos);
-    if (loc.getCgi()[extention].size() != 0){
-        cout << "CGI: " << file << endl;
-        return true;
+    if (pos != std::string::npos){
+        string extention = file.substr(pos, pos2 - pos);
+        if (loc.getCgi()[extention].size() != 0){
+            return true;
+        }
+        else if (pos2 != std::string::npos){
+            return is_CGI(file_name, index, pos2 + 1);
+        }
     }
-    else if (pos2 != std::string::npos){
+    else if (pos2 <= file_name.size()){
         return is_CGI(file_name, index, pos2 + 1);
     }
-    
     return false;
+}
+
+string get_CGI_script(std::string file_name, size_t index, size_t start_pos){
+    location loc = get_location(file_name, servers[index]);
+
+    size_t i = start_pos;
+
+    for (; file_name[i] == '/'; i++);
+    string file = file_name;
+    file = file.substr(i);
+    size_t pos2 = file.find_first_of('/', start_pos);
+
+    size_t pos = file.find_last_of('.', pos2);
+    if (pos != std::string::npos){
+        string extention = file.substr(pos, pos2 - pos);
+        if (loc.getCgi()[extention].size() != 0){
+            return file_name.substr(0, file_name.find(extention) + extention.size());
+        }
+        else if (pos2 != std::string::npos){
+            return get_CGI_script(file_name, index, pos2 + 1);
+        }
+    }
+    else if (pos2 <= file_name.size()){
+        return get_CGI_script(file_name, index, pos2 + 1);
+    }
+    throw 500;
 }
 
 void    Request::fill_request(std::vector<char> &buf){
