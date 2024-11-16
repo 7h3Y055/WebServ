@@ -76,6 +76,9 @@ void Response::set_body(std::vector<char> &body){
     this->_body = body;
 }
 
+std::string &Response::body_file_path_ref(){
+    return this->body_file_path;
+}
 
 
 Response::Response(Request &req): _req(req)

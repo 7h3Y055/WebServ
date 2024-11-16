@@ -300,37 +300,36 @@ void _Run_Server()
 
 
 
-                        if(is_CGI(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) && clients[client_fd]->req.get_method() != "DELETE")
+                        if(is_CGI(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) && clients[client_fd]->req.get_method() != "DELETE") //CGI
                         {
 
-                            cout << "CGI script : " << get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) << endl;
+                            // cout << "CGI script : " << get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) << endl;
 
-                            cout << "CGI still not implemented !!!!!!!!!!!!!" << endl;
+                            // cout << "CGI still not implemented !!!!!!!!!!!!!" << endl;
 
-                            exit(23);
-                            // std::cout << "this is the path == " << path << std::endl;
-                            // Response *res = new Response(clients[client_fd]->req);
-                            // res->set_status_code(200);
-                            // res->set_status_message("OK");
-                            // res->set_header("Content-Type", "text/html");
-                            // std::string content = "<html><body><h1>from cgi file hahahahaha </h1></body></html>";
-                            // std::vector<char> body(content.begin(), content.end());
-                            // res->set_body(body);
-                            // std::vector<char> response_binary = res->get_response();
-                            // size_t start = 0;
-                            // size_t end = 0;
-                            // while (start < response_binary.size())
-                            // {
-                            //     end = start + 2048;
-                            //     if (end > response_binary.size())
-                            //         end = response_binary.size();
-                            //     send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
-                            //     start = end;
-                            // }
-                            // epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                            // delete clients[client_fd];
-                            // clients.erase(client_fd);
-                            // close(client_fd);
+                            // cout << "CGI is done" << endl;
+                            
+                            location loc = get_location(get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0), servers[clients[client_fd]->req.get_server_index()]);
+                            CGI cgi(clients[client_fd]->req, loc);
+                            cgi.execute();
+                            Response* res = cgi.get_response();
+                            std::vector<char> response_binary = res->get_response();
+
+
+                            size_t start = 0;
+                            size_t end = 0;
+                            while (start < response_binary.size())
+                            {
+                                end = start + 2048;
+                                if (end > response_binary.size())
+                                    end = response_binary.size();
+                                send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
+                                start = end;
+                            }
+                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                            delete clients[client_fd];
+                            clients.erase(client_fd);
+                            close(client_fd);
                         }
                         else if (clients[client_fd]->req.get_method() == "GET") // GET
                         {

@@ -9,7 +9,8 @@ class Response
         int _status_code;
         std::string _status_message;
         std::map<std::string, std::string> _headers;
-        std::vector<char> _body;
+        std::vector<char> _body; // HERE
+        std::string body_file_path;
     public:
 
         std::vector<char> &get_response();
@@ -17,6 +18,7 @@ class Response
         void set_status_message(std::string status_message);
         void set_header(std::string key, std::string value);
         void set_body(std::vector<char> &body);
+        std::string& body_file_path_ref();
 
         Response(Request &req);
         ~Response();

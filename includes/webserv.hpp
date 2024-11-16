@@ -37,6 +37,8 @@
 #include "config.hpp"
 #include "_Get.hpp"
 #include "client.hpp"
+#include "delete.hpp"
+#include "cgi.hpp"
 
 
 #define SEND_BUFFER_SIZE 2048
