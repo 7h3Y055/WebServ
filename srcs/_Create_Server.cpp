@@ -251,14 +251,14 @@ void _Run_Server()
                 {
                     try
                     {
-                        if (clients[client_fd]->req.get_method() == "GET")
+                        if (clients[client_fd]->req.get_method() == "GET" && 0)
                         {
-                            bool is_cgi = false;
+                            bool is_cgi = true;
                             std::string resources = clients[client_fd]->req.get_URI();
                             location loc = find_best_location(servers[clients[client_fd]->req.get_server_index()].getLocations(), resources);
                             std::string root = loc.getRoot();
-                            if (loc.getCgi().size() > 0)
-                                is_cgi = true;
+                            // if (loc.getCgi().size() > 0)
+                            //     is_cgi = true;
                             std::string path = root + resources;
                             if (access(path.c_str(), F_OK) == -1)
                             {

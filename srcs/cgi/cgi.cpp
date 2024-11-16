@@ -76,9 +76,11 @@ Response*	CGI::get_response(void)
 	Response *res = new Response(_req);
 	size_t	content_length = SIZE_MAX;
 	string	content;
-	size_t	heaers_end_pos = _output.find("\r\n\r\n");
-	if (heaers_end_pos == string::npos)
+	int boundary_len = (_output.find("\n\n") > _output.find("\r\n\r\n") ? 4: 2);
+	size_t	heaers_end_pos =  (_output.find("\n\n") > _output.find("\r\n\r\n") ? _output.find("\r\n\r\n"): _output.find("\n\n"));
+	if (heaers_end_pos == string::npos){
 		content = _output;
+	}
 	else
 	{
 		string headers = _output.substr(0, heaers_end_pos);
@@ -95,9 +97,9 @@ Response*	CGI::get_response(void)
 			}
 		}
 		if (content_length == SIZE_MAX || content_length  > _output.length() - heaers_end_pos)
-			content = _output.substr(heaers_end_pos + 4);
+			content = _output.substr(heaers_end_pos + boundary_len);
 		else
-			content = _output.substr(heaers_end_pos + 4, content_length);
+			content = _output.substr(heaers_end_pos + boundary_len, content_length);
 	}
 	res->body_file_path_ref() = generate_random_name();
 	ofstream file(res->body_file_path_ref().c_str());
