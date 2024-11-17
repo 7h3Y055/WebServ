@@ -332,7 +332,8 @@ Response *create_redirection(location &loc, Request &req){
     return res;
 }
 
-Response *Request::execute_request(){
+Response *Request::execute_request()
+{
     location loc = get_location(get_file_name(), servers[get_server_index()]);
 
     if (loc.getRedirection().size() == 1){

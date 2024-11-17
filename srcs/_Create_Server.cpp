@@ -246,7 +246,6 @@ void _Run_Server()
             else
             {
                 int client_fd = events[i].data.fd;
-                // std::cout << "Client data available: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                 try
                 {
                     if (events[i].events & (EPOLLRDHUP | EPOLLHUP))
@@ -290,7 +289,7 @@ void _Run_Server()
                     else if (events[i].events & EPOLLOUT && clients[client_fd] && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                     {
                         if(is_CGI(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) 
-                            && clients[client_fd]->req.get_method() != "DELETE") //CGI
+                            && clients[client_fd]->req.get_method() != "DELETE")
                         {
                             location loc = get_location(get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0), servers[clients[client_fd]->req.get_server_index()]);
                             CGI cgi(clients[client_fd]->req, loc);
@@ -313,13 +312,32 @@ void _Run_Server()
                             clients.erase(client_fd);
                             close(client_fd);
                         }
-                        else if (clients[client_fd]->req.get_method() == "GET" && 0) // GET
+                        else if (clients[client_fd]->req.get_method() == "GET") // GET
                         {
-
                             std::string resources = clients[client_fd]->req.get_URI();
-                            location loc = find_best_location(servers[clients[client_fd]->req.get_server_index()].getLocations(), resources);
+                            location loc = get_location(resources, servers[clients[client_fd]->req.get_server_index()]);
                             std::string root = loc.getRoot();
                             std::string path = root + resources;
+                            if (loc.getRedirection().size() > 0)
+                            {
+                                Response *res = create_redirection(loc, clients[client_fd]->req);
+                                std::vector<char> response_binary = res->get_response();
+                                ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
+                                std::cout << "Redirected successfully" << std::endl;
+                                if (ret == -1)
+                                {
+                                    std::cerr << "Send failed" << std::endl;
+                                }
+                                std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
+                                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                delete clients[client_fd];
+                                clients.erase(client_fd);
+                                close(client_fd);
+                                continue;
+                            }
+
+                            std::cout << "path == " << path << std::endl;
+                            std::cout << "resources == " << resources << std::endl;
                             if (access(path.c_str(), F_OK) == -1)
                             {
                                 std::cout << "have no access == " << path << std::endl;
@@ -394,16 +412,6 @@ void _Run_Server()
                                 clients.erase(client_fd);
                                 close(client_fd);
                             }
-
-
-
-
-
-
-
-
-
-
 
                             else
                             {
