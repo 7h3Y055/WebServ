@@ -4,8 +4,11 @@ extern char **environ;
 int CGI::execute(void)
 {
 	init();
+	int _err_fd[2];
 
 	if (pipe(_fd) == -1) // create pipe
+		throw 500;
+	if (pipe(_err_fd) == -1) // create pipe
 		throw 500;
 	if ((_cgi_child = fork()) == -1) // fork process
 		throw 500;
@@ -13,7 +16,11 @@ int CGI::execute(void)
 	{
 		if (dup2(_fd[1], STDOUT_FILENO) == -1) // redirect stdout to pipe
 			throw 500;
+		if (dup2(_err_fd[1], STDERR_FILENO) == -1) // redirect stderr to pipe
+			throw 500;
 		if (close(_fd[1]) || close(_fd[0])) // close write end and read end of pipe
+			throw 500;
+		if (dup2(_err_fd[1], STDERR_FILENO) == -1) // redirect stderr to pipe
 			throw 500;
 		if (_req.get_method() == "POST")
 		{
@@ -26,7 +33,7 @@ int CGI::execute(void)
 		execve(_cgi_path.c_str(), (char **)argv, environ);
 		throw 500;
 	}
-	if (close(_fd[1]))
+	if (close(_fd[1]) || close(_err_fd[1])) // close write end of pipe
 		throw 500;
 	waitpid(_cgi_child, NULL, 0);
 	while (1)
@@ -43,6 +50,14 @@ int CGI::execute(void)
 	}
 	if (-1 == close(_fd[0])) // close read end of pipe
 		throw 500;
+	{
+		char buffer[10];
+		int bytes_read = read(_err_fd[0], buffer, 10);
+		if (bytes_read == -1)
+			throw 500;
+		if (bytes_read)
+			throw 500;
+	}
 	return (0);
 }
 
@@ -54,6 +69,10 @@ void	CGI::init(void)
 	_filename = get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).c_str();
 	_cgi_path = _loc.getCgi().at(_filename.substr(_filename.find_last_of('.')));
 	_content_length = _req.get_fixed_length();
+	string _query_string = _req.get_URI().substr(get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).length());
+	if (!_query_string.empty())
+		_query_string = _query_string.substr(1);
+	cout << "_query_string :" << _query_string.c_str() << endl;
 	cout << "_path :" << _path.c_str() << endl;
 	(
 		setenv("REDIRECT_STATUS", "200", 1) |
@@ -67,7 +86,7 @@ void	CGI::init(void)
 		setenv("PATH_TRANSLATED", _path.c_str(), 1) |
 		setenv("PATH_INFO", _path.c_str(), 1) |
 		setenv("SCRIPT_NAME", _path.c_str(), 1) |
-		setenv("QUERY_STRING", _req.get_URI().substr(get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).length()).c_str(), 1)
+		setenv("QUERY_STRING", _query_string.c_str(), 1)
 	) == -1 ? throw 500 : 0;
 	cout << "q:>>>>: " << _req.get_URI().substr(get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).length()).c_str() << endl;
 }
