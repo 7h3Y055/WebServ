@@ -14,6 +14,24 @@ int CGI::execute(void)
 		throw 500;
 	if (_cgi_child == 0) // child process
 	{
+		if (_req.get_method() == "POST")
+		{
+			cerr << "POST" << endl;
+			cerr << "POST" << endl;
+			int fd = open(_body_path.c_str(), O_RDONLY);
+			if (fd == -1)
+				throw 500;
+			dup2(fd, STDIN_FILENO);
+		}
+		else
+		{
+			cerr << "GET" << endl;
+			int null_fd = open("/dev/null", O_RDONLY);
+			if (null_fd == -1)
+				throw 500;
+			dup2(null_fd, STDIN_FILENO);
+			close(null_fd);
+		}
 		if (dup2(_fd[1], STDOUT_FILENO) == -1) // redirect stdout to pipe
 			throw 500;
 		if (dup2(_err_fd[1], STDERR_FILENO) == -1) // redirect stderr to pipe
@@ -22,13 +40,8 @@ int CGI::execute(void)
 			throw 500;
 		if (dup2(_err_fd[1], STDERR_FILENO) == -1) // redirect stderr to pipe
 			throw 500;
-		if (_req.get_method() == "POST")
-		{
-			int fd = open(_body_path.c_str(), O_RDONLY);
-			if (fd == -1)
-				throw 500;
-			dup2(fd, STDIN_FILENO);
-		}
+		if (close(_err_fd[1]) || close(_err_fd[0])) // close write end and read end of pipe
+			throw 500;
 		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
 		execve(_cgi_path.c_str(), (char **)argv, environ);
 		throw 500;
