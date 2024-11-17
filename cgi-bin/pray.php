@@ -69,7 +69,7 @@ if (!$nextPrayer) {
             justify-content: center;
             align-items: center;
             height: 100vh;
-            overflow: hidden;
+            overflow: auto;
         }
 
         .container {
@@ -80,6 +80,8 @@ if (!$nextPrayer) {
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
             padding: 30px;
             animation: fadeIn 1s ease-in-out;
+            max-height: 90vh; /* Ensures the container doesn't overflow */
+            overflow-y: auto; /* Adds vertical scrolling */
         }
 
         @keyframes fadeIn {
