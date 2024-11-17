@@ -241,7 +241,6 @@ void _Run_Server()
                     }
                     clients[client_fd] = client;
                     std::cout << "New connection from " << client->get_ip() << ":" << client->get_port() << std::endl;
-                    // std::cout << "new connection to server = " << servers[index].getPort() << servers[index].getServerName()[0] << std::endl;
                 }
             }
             else
@@ -290,32 +289,15 @@ void _Run_Server()
                     }
                     else if (events[i].events & EPOLLOUT && clients[client_fd] && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                     {
-                        // int server_fd = events[i].data.fd;
-
-
-                        // int index = get_server_index_(server_fd, clients[client_fd]->req.get_Host());
-                        // clients[client_fd]->req.set_server_index(index);
-                        // std::cout << "server index == " << index << std::endl ;
-
-
-
-
-                        if(is_CGI(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) && clients[client_fd]->req.get_method() != "DELETE") //CGI
+                        if(is_CGI(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) 
+                            && clients[client_fd]->req.get_method() != "DELETE") //CGI
                         {
-
-                            // cout << "CGI script : " << get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) << endl;
-
-                            // cout << "CGI still not implemented !!!!!!!!!!!!!" << endl;
-
-                            // cout << "CGI is done" << endl;
-                            
                             location loc = get_location(get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0), servers[clients[client_fd]->req.get_server_index()]);
                             CGI cgi(clients[client_fd]->req, loc);
                             cgi.execute();
                             Response* res = cgi.get_response();
+                            std::cout << "res body path == " << res->body_file_path_ref() << std::endl;
                             std::vector<char> response_binary = res->get_response();
-
-
                             size_t start = 0;
                             size_t end = 0;
                             while (start < response_binary.size())
@@ -331,15 +313,12 @@ void _Run_Server()
                             clients.erase(client_fd);
                             close(client_fd);
                         }
-                        else if (clients[client_fd]->req.get_method() == "GET") // GET
+                        else if (clients[client_fd]->req.get_method() == "GET" && 0) // GET
                         {
-                            // bool is_cgi = false;
+
                             std::string resources = clients[client_fd]->req.get_URI();
                             location loc = find_best_location(servers[clients[client_fd]->req.get_server_index()].getLocations(), resources);
-                            // std::cout << "location name == "<< loc.getPath() << std::endl;
                             std::string root = loc.getRoot();
-                            // if (loc.getCgi().size() > 0)
-                                // is_cgi = true;
                             std::string path = root + resources;
                             if (access(path.c_str(), F_OK) == -1)
                             {
@@ -358,8 +337,25 @@ void _Run_Server()
                             }
                             if (get_resources_type(path) == "directory")
                             {
+                                cout << "DIRECTORY !!!!!!\n";
                                 if (path[path.size() - 1] != '/')
-                                    throw 301;
+                                {
+                                    cout << "REDIRECTION !!!!!!\n";
+                                    Response *res = createResponse(301, &clients[client_fd]->req);
+                                    res->set_header("Location", resources + '/');
+                                    vector<char> response_binary = res->get_response();
+                                    ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
+                                    if (ret == -1)
+                                    {
+                                        std::cerr << "Send failed" << std::endl;
+                                    }
+                                    cout << resources + '/' << endl;
+                                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                    delete clients[client_fd];
+                                    clients.erase(client_fd);
+                                    close(client_fd);
+                                    continue;
+                                }
                                 if (!loc.getDirectoryListing())
                                 {
                                     std::cout << "no directory listing" << std::endl;
@@ -423,7 +419,11 @@ void _Run_Server()
                                     std::vector<char> header = generate_header(clients[client_fd]->file_stream, path);
                                     for (size_t i = 0; i < header.size(); i++)
                                         buffer[i] = header[i];
-                                    send(client_fd, buffer, header.size(), 0);
+                                    ssize_t ret = send(client_fd, buffer, header.size(), 0);
+                                    if (ret != -1)
+                                    {
+                                        clients[client_fd]->update_last_read();
+                                    }
                                 }
                                 else
                                 {

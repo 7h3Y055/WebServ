@@ -56,7 +56,7 @@ void	CGI::init(void)
 	_content_length = _req.get_fixed_length();
 	cout << "_path :" << _path.c_str() << endl;
 	(
-		setenv("REDIRECT_STATUS", "200", 1) |
+		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
 		setenv("SERVER_NAME", "webserv", 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |
@@ -71,6 +71,24 @@ void	CGI::init(void)
 	) == -1 ? throw 500 : 0;
 	cout << "q:>>>>: " << _req.get_URI().substr(get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).length()).c_str() << endl;
 }
+
+/*
+
+
+	1 - no more hardcoding for the http code .
+	2 - the function should return a file .
+	3 - the output should contain header .
+	4 - check for the error in the cgi
+	5 - query strings not working
+	6 - post data (all the inputs not working ).
+	7 - the output file should be in the client class !!!!!!!!!!!!
+	8 - 
+
+
+*/
+
+
+
 
 Response*	CGI::get_response(void)
 {
