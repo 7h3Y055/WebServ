@@ -2,7 +2,7 @@ NAME = webserv
 
 CXX = c++
 
-CXXFLAGS = -std=c++98 -g3 #-Wall -Wextra -Werror
+CXXFLAGS = -std=c++98 -g3 #-fsanitize=address #-Wall -Wextra -Werror
 
 SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
 	srcs/_Create_Server.cpp srcs/methods/_Post/post.cpp \
@@ -19,6 +19,7 @@ OBJ = $(SRC:.cpp=.o)
 all: $(NAME)
 	# @clear
 	# @./$(NAME) | cat -e
+	rm -f $(OBJ)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)

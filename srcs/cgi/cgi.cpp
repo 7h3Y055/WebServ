@@ -78,6 +78,7 @@ void	CGI::init(void)
 		_query_string = _query_string.substr(1);
 	(
 		setenv("REDIRECT_STATUS", "", 1) |
+		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
 		setenv("SERVER_NAME", "webserv", 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |

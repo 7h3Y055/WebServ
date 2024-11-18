@@ -42,7 +42,7 @@
 
 
 #define SEND_BUFFER_SIZE 2048
-#define TIMEOUT 30
+#define TIMEOUT 5
 
 using namespace std;
 
