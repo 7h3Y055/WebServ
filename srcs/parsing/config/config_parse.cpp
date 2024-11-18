@@ -147,14 +147,16 @@ double convert_to_byte(std::string str){
     if (n < 0)
         throw std::runtime_error("Error: invalid client_max_body_size");
     if (last == 'k' || last == 'K')
-        return n * 1024;
+        n = n * 1024;
     else if (last == 'm' || last == 'M')
-        return n * 1024 * 1024;
+        n = n * 1024 * 1024;
     else if (last == 'g' || last == 'G')
-        return n * 1024 * 1024 * 1024;
+        n = n * 1024 * 1024 * 1024;
     else
-        return n;
-    return 0;
+        n = n;
+    if (n > std::numeric_limits<long long>::max() || n < std::numeric_limits<long long>::min())
+        throw std::runtime_error("Error: client_max_body_size too large");
+    return n;
 }
 
 void init_server(Serv &server, std::vector<string> &strs){

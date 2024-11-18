@@ -487,6 +487,16 @@ void _Run_Server()
                     clients.erase(client_fd);
                     close(client_fd);
                 }
+                // catch (...)
+                // {
+                //     std::cerr << "Internal server error" << '\n';
+                //     Response *res = createResponse(500, &clients[client_fd]->req);
+                //     send(client_fd, &(*res->get_response().begin()), res->get_response().size(), 0);
+                //     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                //     delete clients[client_fd];
+                //     clients.erase(client_fd);
+                //     close(client_fd);
+                // }
             }
         }
     }
