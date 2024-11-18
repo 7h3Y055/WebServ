@@ -1,6 +1,7 @@
 #!/usr/bin/php
 <?php
 // CGI header
+header("Status: 400 Bad Request");
 header("Content-Type: text/html");
 
 // HTML content with PHP, CSS, and a floral-inspired animated design

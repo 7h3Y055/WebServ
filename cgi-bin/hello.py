@@ -2,9 +2,12 @@
 import cgi
 
 # Ensure the correct content-type header is printed for HTML
+print("Status: 200 OK\r")
 print("Content-Type: text/html\r")
 print("\r")
 # HTML output with a dynamic floral design
+# name =  input("")
+# print(f"<h1>Hello, {name}!</h1>")
 html_content = """
 <!DOCTYPE html>
 <html lang="en">
