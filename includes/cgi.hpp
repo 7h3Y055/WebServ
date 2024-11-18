@@ -29,7 +29,7 @@ class CGI
 	public:
 		void		init(void);
 		int			execute(void);
-		Response	*get_response(void);
+		string		get_response(void);
 		CGI(Request &req, location &loc) 
 		: _req(req) , _loc(loc) {};
 		~CGI() {};

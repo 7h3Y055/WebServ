@@ -138,4 +138,5 @@ class Client
         bool sending_file;
 
         bool header_flag;
+        std::string path_file;
 };

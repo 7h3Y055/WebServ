@@ -92,15 +92,13 @@ void	CGI::init(void)
 	) == -1 ? throw 500 : 0;
 }
 
-// string		CGI::get_response(void)
-Response*	CGI::get_response(void) // replace with above
+// Response*	CGI::get_response(void) // replace with above
+string		CGI::get_response(void)
 {
-	Response *res = new Response(_req); // delete
 	string	output_file_path = generate_random_name();
 	size_t	content_length = SIZE_MAX;
 	bool	is_status_set = false;
 	string	content;
-	cout << "path: " << (res->body_file_path_ref() = output_file_path) << endl; // delete
 	int boundary_len = (_output.find("\n\n") > _output.find("\r\n\r\n") ? 4: 2);
 	size_t	heaers_end_pos =  (_output.find("\n\n") > _output.find("\r\n\r\n") ? _output.find("\r\n\r\n"): _output.find("\n\n"));
 	ofstream file(output_file_path.c_str());
@@ -148,8 +146,5 @@ Response*	CGI::get_response(void) // replace with above
 	file << "\r\n";
 	file << content;
 	file.close();
-	std::vector<char> body(content.begin(), content.end()); // delete
-	res->set_body(body); // delete
-	return (res); // replace with below
-	// return (output_file_path);
+	return (output_file_path);
 }

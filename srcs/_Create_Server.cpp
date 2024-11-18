@@ -312,20 +312,21 @@ void _Run_Server()
                             location loc = get_location(get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0), servers[clients[client_fd]->req.get_server_index()]);
                             CGI cgi(clients[client_fd]->req, loc);
                             cgi.execute();
-                            Response* res = cgi.get_response();
-                            std::vector<char> response_binary = res->get_response();
+                            clients[client_fd]->path_file = cgi.get_response();
+                             std::cout << "this is path file === " << clients[client_fd]->path_file << std::endl;
+                            // std::vector<char> response_binary = res->get_response();
 
 
-                            size_t start = 0;
-                            size_t end = 0;
-                            while (start < response_binary.size())
-                            {
-                                end = start + 2048;
-                                if (end > response_binary.size())
-                                    end = response_binary.size();
-                                send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
-                                start = end;
-                            }
+                            // size_t start = 0;
+                            // size_t end = 0;
+                            // while (start < response_binary.size())
+                            // {
+                            //     end = start + 2048;
+                            //     if (end > response_binary.size())
+                            //         end = response_binary.size();
+                            //     send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
+                            //     start = end;
+                            // }
                             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                             delete clients[client_fd];
                             clients.erase(client_fd);
