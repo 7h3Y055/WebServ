@@ -16,45 +16,36 @@ int CGI::execute(void)
 	{
 		if (_req.get_method() == "POST")
 		{
-			cerr << "POST" << endl;
-			cerr << "POST" << endl;
+			cout << "POST body_path: " << _body_path.c_str() << endl;
 			int fd = open(_body_path.c_str(), O_RDONLY);
+			perror("open");
 			if (fd == -1)
-				throw 500;
+				throw 501;
 			dup2(fd, STDIN_FILENO);
 		}
 		else
-		{
-			cerr << "GET" << endl;
-			int null_fd = open("/dev/null", O_RDONLY);
-			if (null_fd == -1)
-				throw 500;
-			dup2(null_fd, STDIN_FILENO);
-			close(null_fd);
-		}
+			close(STDIN_FILENO);
 		if (dup2(_fd[1], STDOUT_FILENO) == -1) // redirect stdout to pipe
 			throw 500;
 		if (dup2(_err_fd[1], STDERR_FILENO) == -1) // redirect stderr to pipe
 			throw 500;
 		if (close(_fd[1]) || close(_fd[0])) // close write end and read end of pipe
 			throw 500;
-		if (dup2(_err_fd[1], STDERR_FILENO) == -1) // redirect stderr to pipe
-			throw 500;
 		if (close(_err_fd[1]) || close(_err_fd[0])) // close write end and read end of pipe
 			throw 500;
 		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
 		execve(_cgi_path.c_str(), (char **)argv, environ);
-		throw 500;
+		throw 501;
 	}
 	if (close(_fd[1]) || close(_err_fd[1])) // close write end of pipe
-		throw 500;
+		throw 501;
 	waitpid(_cgi_child, NULL, 0);
 	while (1)
 	{
 		char buffer[1024];
 		int bytes_read = read(_fd[0], buffer, 1024);
 		if (bytes_read == -1)
-			throw 500;
+			throw 501;
 		if (bytes_read == 0)
 			break;
 		_output.append(buffer, bytes_read);
@@ -62,14 +53,14 @@ int CGI::execute(void)
 			break;
 	}
 	if (-1 == close(_fd[0])) // close read end of pipe
-		throw 500;
+		throw 501;
 	{
 		char buffer[10];
 		int bytes_read = read(_err_fd[0], buffer, 10);
 		if (bytes_read == -1)
 			throw 500;
 		if (bytes_read)
-			throw 500;
+			throw 501;
 	}
 	return (0);
 }
@@ -85,10 +76,8 @@ void	CGI::init(void)
 	string _query_string = _req.get_URI().substr(get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).length());
 	if (!_query_string.empty())
 		_query_string = _query_string.substr(1);
-	cout << "_query_string :" << _query_string.c_str() << endl;
-	cout << "_path :" << _path.c_str() << endl;
 	(
-		setenv("REDIRECT_STATUS", "200", 1) |
+		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
 		setenv("SERVER_NAME", "webserv", 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |
@@ -101,32 +90,53 @@ void	CGI::init(void)
 		setenv("SCRIPT_NAME", _path.c_str(), 1) |
 		setenv("QUERY_STRING", _query_string.c_str(), 1)
 	) == -1 ? throw 500 : 0;
-	cout << "q:>>>>: " << _req.get_URI().substr(get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).length()).c_str() << endl;
 }
 
-Response*	CGI::get_response(void)
+// string		CGI::get_response(void)
+Response*	CGI::get_response(void) // replace with above
 {
-	Response *res = new Response(_req);
+	Response *res = new Response(_req); // delete
+	string	output_file_path = generate_random_name();
 	size_t	content_length = SIZE_MAX;
+	bool	is_status_set = false;
 	string	content;
+	cout << "path: " << (res->body_file_path_ref() = output_file_path) << endl; // delete
 	int boundary_len = (_output.find("\n\n") > _output.find("\r\n\r\n") ? 4: 2);
 	size_t	heaers_end_pos =  (_output.find("\n\n") > _output.find("\r\n\r\n") ? _output.find("\r\n\r\n"): _output.find("\n\n"));
+	ofstream file(output_file_path.c_str());
 	if (heaers_end_pos == string::npos){
 		content = _output;
 	}
 	else
 	{
 		string headers = _output.substr(0, heaers_end_pos);
-		vector<string> header_lines = split_string_with_multiple_delemetres(headers, "\r\n");
+		vector<string> header_lines = split_string_with_multiple_delemetres(headers, "\n");
 		for (size_t i = 0; i < header_lines.size(); i++)
 		{
-			vector<string> header = split_string_with_multiple_delemetres(header_lines[i], ": ");
+			vector<string> header = split_string_with_multiple_delemetres(header_lines[i], ":");
 			if (header.size() == 2)
 			{
 				if (header.at(0) == "Content-Length")
+				{
+					if (!is_status_set)
+						file << "HTTP/1.1 200 OK\r\n";
+					is_status_set = true;
 					content_length = atoi(header.at(1).c_str());
+				}
+				else if (header.at(0) == "Status")
+				{
+					if (is_status_set)
+						throw 500;
+					file << "HTTP/1.1 " << header.at(1);
+					is_status_set = true;
+				}
 				else
-					res->set_header(header.at(0), header.at(1));
+				{
+					if (!is_status_set)
+						file << "HTTP/1.1 200 OK\r\n";
+					file << header_lines[i];
+					is_status_set = true;
+				}
 			}
 		}
 		if (content_length == SIZE_MAX || content_length  > _output.length() - heaers_end_pos)
@@ -134,13 +144,12 @@ Response*	CGI::get_response(void)
 		else
 			content = _output.substr(heaers_end_pos + boundary_len, content_length);
 	}
-	res->body_file_path_ref() = generate_random_name();
-	ofstream file(res->body_file_path_ref().c_str());
+	file << "Content-Length: " << content.length() << "\r\n";
+	file << "\r\n";
 	file << content;
 	file.close();
-	res->set_status_code(200);
-	res->set_status_message("OK");
-	std::vector<char> body(content.begin(), content.end());
-	res->set_body(body);
-	return (res);
+	std::vector<char> body(content.begin(), content.end()); // delete
+	res->set_body(body); // delete
+	return (res); // replace with below
+	// return (output_file_path);
 }

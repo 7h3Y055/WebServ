@@ -202,6 +202,13 @@ void    Request::fill_request(std::vector<char> &buf){
             if (line.empty())
                 continue;
             std::vector<std::string> strs = split_string_with_multiple_delemetres(line, " \t\r\n");
+            if (_Method != "POST" || (_Transfer_Mechanism == "Fixed" && _Fixed_length == 0)){
+            {
+                _Body_path =  generate_random_name();
+                _request_state = HTTP_COMPLETE;
+
+            }
+            }
             if (strs.size() == 3){
                 _Method = strs[0];
                 _URI = check_URI(strs[1]);
