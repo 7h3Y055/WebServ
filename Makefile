@@ -18,8 +18,8 @@ OBJ = $(SRC:.cpp=.o)
 
 all: $(NAME)
 	# @clear
-	@./$(NAME) | cat -e
-	# rm -f $(OBJ)
+	# @./$(NAME) | cat -e
+	rm -f $(OBJ)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)

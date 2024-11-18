@@ -166,6 +166,24 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
     }
 }
 
+std::vector<char> _read_file_store_in_vector(std::string &path)
+{
+    std::ifstream file(path.c_str(), std::ios::binary);
+    if (!file.is_open())
+        throw std::runtime_error("File not found");
+    // std::vector <char> header = generate_header(file, path);
+    std::vector<char> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    std::vector<char> response_binary;
+    // response_binary.insert(response_binary.end(), header.begin(), header.end());
+
+    for (size_t i = 0; i < buffer.size(); i++)
+    {
+        response_binary.push_back(buffer[i]);
+    }
+    file.close();
+    return response_binary;
+}
+
 
 void _Run_Server()
 {
@@ -221,6 +239,7 @@ void _Run_Server()
                     // int index = get_server_index(server_fd);
                     Client *client = new Client(client_fd, addr, -1);
                     client->header_flag = false;
+                    client->cgi_header_flag = false;
                     event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLOUT;
                     event.data.fd = client_fd;
                     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &event) == -1)
@@ -281,31 +300,49 @@ void _Run_Server()
                         if(is_CGI(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) 
                             && clients[client_fd]->req.get_method() != "DELETE")
                         {
-                            location loc = get_location(get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0), servers[clients[client_fd]->req.get_server_index()]);
-                            CGI cgi(clients[client_fd]->req, loc);
-                            cgi.execute();
-                            clients[client_fd]->path_file = cgi.get_response();
-                             std::cout << "this is path file === " << clients[client_fd]->path_file << std::endl;
-                            // std::vector<char> response_binary = res->get_response();
+                            char buffer[SEND_BUFFER_SIZE];
+                            if (clients[client_fd]->cgi_header_flag == false)
+                            {
+                                location loc = get_location(get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0), servers[clients[client_fd]->req.get_server_index()]);
+                                CGI cgi(clients[client_fd]->req, loc);
+                                cgi.execute();
+                                
+                                clients[client_fd]->path_file = cgi.get_response();
+                                clients[client_fd]->cgi_file_stream.open(clients[client_fd]->path_file.c_str(), std::ios::binary);
+                                if (!clients[client_fd]->cgi_file_stream.is_open())
+                                    throw 404;
+                                clients[client_fd]->cgi_file_offset = 0;
+                                clients[client_fd]->cgi_header_flag = true;
+                                clients[client_fd]->sending_file = true;
+                            }
+                            else
+                            {
+                                std::memset(buffer, 0, SEND_BUFFER_SIZE); // WARRING !!!!!!!!!!
+                                clients[client_fd]->cgi_file_stream.seekg(clients[client_fd]->cgi_file_offset);
+                                clients[client_fd]->cgi_file_stream.read(buffer, SEND_BUFFER_SIZE);
+                                size_t bytes_read = clients[client_fd]->cgi_file_stream.gcount();
+                                if (bytes_read == 0)
+                                {
+                                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                    delete clients[client_fd];
+                                    clients.erase(client_fd);
+                                    close(client_fd);
+                                }
+                                else
+                                {
+                                    ssize_t ret = send(client_fd, buffer, bytes_read, 0);
+                                    if (ret != -1)
+                                    {
+                                        clients[client_fd]->update_last_read();
+                                    }
+                                    clients[client_fd]->cgi_file_offset += bytes_read;
+                                }
+                            }
 
-
-                            // size_t start = 0;
-                            // size_t end = 0;
-                            // while (start < response_binary.size())
-                            // {
-                            //     end = start + 2048;
-                            //     if (end > response_binary.size())
-                            //         end = response_binary.size();
-                            //     send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
-                            //     start = end;
-                            // }
-                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                            delete clients[client_fd];
-                            clients.erase(client_fd);
-                            close(client_fd);
                         }
-                        else if (clients[client_fd]->req.get_method() == "GET") // GET
+                        else if (clients[client_fd]->req.get_method() == "GET" ) // GET
                         {
+                            std::cout << "this is from the get whaaaaaaaaaaaaaaaaaaaaaaaaaat" << std::endl;
                             std::string resources = clients[client_fd]->req.get_URI();
                             location loc = get_location(resources, servers[clients[client_fd]->req.get_server_index()]);
                             std::string root = loc.getRoot();
