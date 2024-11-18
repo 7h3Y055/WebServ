@@ -60,66 +60,56 @@ void _Create_Servers()
     int opt = 1;
     for (size_t i = 0; i < servers.size(); i++)
     {
-        try
+        int port = servers[i].getPort();
+        std::string host = servers[i].getHost();
+        std::pair<std::string, int> host_port = std::make_pair(host, port);
+        if (host_port_to_fd.find(host_port) == host_port_to_fd.end())
         {
-            int port = servers[i].getPort();
-            std::string host = servers[i].getHost();
-            std::pair<std::string, int> host_port = std::make_pair(host, port);
-
-            if (host_port_to_fd.find(host_port) == host_port_to_fd.end())
+            int fd = socket(AF_INET, SOCK_STREAM, 0);
+            if (fd == -1)
+                throw std::runtime_error("socket failed");
+            if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
             {
-                int fd = socket(AF_INET, SOCK_STREAM, 0);
-                if (fd == -1)
-                    throw std::runtime_error("socket failed");
-                if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
-                {
-                    close(fd);
-                    throw std::runtime_error("setsockopt failed");
-                }
-                struct addrinfo hints, *res;
-                std::memset(&hints, 0, sizeof(hints));
-                hints.ai_family = AF_INET;
-                hints.ai_socktype = SOCK_STREAM;
-                hints.ai_flags = AI_PASSIVE;
-                std::string port_str = _to_string(port);
-                int get_addr = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &res);
-                if (get_addr != 0)
-                {
-                    close(fd);
-                    throw std::runtime_error("getaddrinfo failed");
-                }
-                if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
-                {
-                    close(fd);
-                    freeaddrinfo(res);
-                    throw std::runtime_error("bind failed");
-                }
+                close(fd);
+                throw std::runtime_error("setsockopt failed");
+            }
+            struct addrinfo hints, *res;
+            std::memset(&hints, 0, sizeof(hints));
+            hints.ai_family = AF_INET;
+            hints.ai_socktype = SOCK_STREAM;
+            hints.ai_flags = AI_PASSIVE;
+            std::string port_str = _to_string(port);
+            int get_addr = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &res);
+            if (get_addr != 0)
+            {
+                close(fd);
+                throw std::runtime_error("getaddrinfo failed");
+            }
+            if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
+            {
+                close(fd);
                 freeaddrinfo(res);
-                if (listen(fd, SOMAXCONN) == -1)
-                {
-                    close(fd);
-                    throw std::runtime_error("listen failed");
-                }
-                if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-                {
-                    close(fd);
-                    throw std::runtime_error("fcntl failed");
-                }
-
-                host_port_to_fd[host_port] = fd;
-                servers[i].setFd(fd);
-                sockets_servs[fd].push_back(servers[i]);
-
+                throw std::runtime_error("bind failed");
             }
-            else
+            freeaddrinfo(res);
+            if (listen(fd, SOMAXCONN) == -1)
             {
-                servers[i].setFd(host_port_to_fd[host_port]);
-                sockets_servs[host_port_to_fd[host_port]].push_back(servers[i]);
+                close(fd);
+                throw std::runtime_error("listen failed");
             }
+            if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+            {
+                close(fd);
+                throw std::runtime_error("fcntl failed");
+            }
+            host_port_to_fd[host_port] = fd;
+            servers[i].setFd(fd);
+            sockets_servs[fd].push_back(servers[i]);
         }
-        catch(const std::exception& e)
+        else
         {
-            std::cerr << e.what() << '\n';
+            servers[i].setFd(host_port_to_fd[host_port]);
+            sockets_servs[host_port_to_fd[host_port]].push_back(servers[i]);
         }
     }
 }
