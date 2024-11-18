@@ -43,7 +43,6 @@ std::pair<std::string, std::string> fill_header(std::string header){
     pair.second = pair.second.substr(0, pair.second.find('\r'));
     remove_white_spaces_edges(pair.second);
     if (std::isspace(pair.first[0])){
-        std::cout << header << std::endl;
         throw 400;
     }
     return pair;
@@ -80,7 +79,6 @@ unsigned long long hex2ll(std::string &str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
-        cout << "111111111: " << string(str.begin(), str.begin() + 7) << endl;
             throw 400;
         }
     }
@@ -89,7 +87,6 @@ unsigned long long hex2ll(std::string &str){
     ss >> length;
 
     if (ss.fail()){
-        cout << "111111111: " << endl;
         throw 400; // HERE 
     }
 
@@ -126,6 +123,7 @@ bool buffer_have_nl(std::vector<char> &buf){
 
 std::string get_http_line(std::vector<char> *buf){
     std::string line;
+    
     for (size_t i = 0; i < buf->size() - 1; i++){
         if ((*buf)[i] == '\r' && (*buf)[i + 1] == '\n'){
             line = std::string(buf->begin(), buf->begin() + i);
@@ -192,9 +190,7 @@ string get_CGI_script(std::string file_name, size_t index, size_t start_pos){
 void    Request::fill_request(std::vector<char> &buf){
     _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
     std::string line;
-    // static bool chunked_state = false;
-    // static unsigned long long chunked_length = 0;
-    
+
     while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
     {
         if (_request_state == HTTP_REQUEST_LINE){
@@ -217,8 +213,11 @@ void    Request::fill_request(std::vector<char> &buf){
             _request_state = HTTP_HEADER;
         }
         if (_request_state == HTTP_HEADER){
+            if (_Buffer.empty() && _Host_found != 1)
+                throw 400;
             line = get_http_line(&_Buffer);
             line = line.substr(0, line.find("\r\n"));
+
             if (line.empty()){
                 if (_Host_found != 1){
                     throw 400;
@@ -303,7 +302,6 @@ void    Request::fill_request(std::vector<char> &buf){
                 }
             }
             if (file.tellp() > servers[server_index].getClientMaxBodySize()){
-                cout << "file.tellp() == " << file.tellp() << " > " << server_index << endl;
                 file.close();
                 throw 413;
             }

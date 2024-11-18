@@ -84,6 +84,7 @@ std::string &Response::body_file_path_ref(){
 Response::Response(Request &req): _req(req)
 {
 }
+
 Response::~Response()
 {
 }

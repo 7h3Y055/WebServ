@@ -39,7 +39,7 @@
 #include "client.hpp"
 #include "delete.hpp"
 #include "cgi.hpp"
-
+#include <limits>
 
 #define SEND_BUFFER_SIZE 2048
 #define TIMEOUT 5

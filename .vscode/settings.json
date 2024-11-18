@@ -6,6 +6,8 @@
         "string_view": "cpp",
         "initializer_list": "cpp",
         "new": "cpp",
-        "iosfwd": "cpp"
+        "iosfwd": "cpp",
+        "stdexcept": "cpp",
+        "*.tcc": "cpp"
     }
 }
