@@ -74,7 +74,7 @@ std::string get_resources_type(std::string resources)
 location find_best_location(std::vector<location> locations, std::string uri)
 {
     location best_location;
-    int best_match = 0;
+    size_t best_match = 0;
     for (size_t i = 0; i < locations.size(); i++)
     {
         std::string path = locations[i].getPath();
