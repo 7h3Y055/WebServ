@@ -13,7 +13,7 @@ int CGI::execute(void)
 	{
 		int fd = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666); // open body file	
 		if (fd == -1)
-			throw 501;
+			throw 500;
 		if (dup2(fd, STDIN_FILENO) == -1)
 			throw 500;
 		if (dup2(_fd[1], STDOUT_FILENO) == -1) // redirect stdout to pipe
@@ -24,7 +24,7 @@ int CGI::execute(void)
 			throw 500;
 		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
 		execve(_cgi_path.c_str(), (char **)argv, environ);
-		throw 501;
+		throw 500;
 	}
 	if (close(_fd[1])) // close write end of pipe
 		throw 500;
@@ -34,7 +34,7 @@ int CGI::execute(void)
 		char buffer[1024];
 		int bytes_read = read(_fd[0], buffer, 1024);
 		if (bytes_read == -1)
-			throw 501;
+			throw 500;
 		if (bytes_read == 0)
 			break;
 		_output.append(buffer, bytes_read);
@@ -42,7 +42,7 @@ int CGI::execute(void)
 			break;
 	}
 	if (-1 == close(_fd[0])) // close read end of pipe
-		throw 501;
+		throw 500;
 	if (-1 == close(_err_file_fd)) // close error file
 		throw 500;
 	return (0);
@@ -66,7 +66,6 @@ void	CGI::init(void)
 		_query_string = _query_string.substr(1);
 	(
 		setenv("REDIRECT_STATUS", "", 1) |
-		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
 		setenv("SERVER_NAME", "webserv", 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |
@@ -81,12 +80,16 @@ void	CGI::init(void)
 	) == -1 ? throw 500 : 0;
 }
 
-// Response*	CGI::get_response(void) // replace with above
 string		CGI::get_response(void)
 {
+	cout << "===========================" << endl;
+	cout << _output << endl;
+	cout << "===========================" << endl;
+
 	string	output_file_path = generate_random_name();
-	size_t	content_length = SIZE_MAX;
-	bool	is_status_set = false;
+	unsigned long long	content_length = SIZE_MAX;
+	string		status_code;
+	string		response_headers;
 	string	content;
 	int boundary_len = (_output.find("\n\n") > _output.find("\r\n\r\n") ? 4: 2);
 	size_t	heaers_end_pos =  (_output.find("\n\n") > _output.find("\r\n\r\n") ? _output.find("\r\n\r\n"): _output.find("\n\n"));
@@ -97,41 +100,39 @@ string		CGI::get_response(void)
 	else
 	{
 		string headers = _output.substr(0, heaers_end_pos);
-		vector<string> header_lines = split_string_with_multiple_delemetres(headers, "\n");
+		vector<string> header_lines = split_string_with_multiple_delemetres(headers, "\r\n");
 		for (size_t i = 0; i < header_lines.size(); i++)
 		{
 			vector<string> header = split_string_with_multiple_delemetres(header_lines[i], ":");
 			if (header.size() == 2)
 			{
-				if (header.at(0) == "Content-Length")
-				{
-					if (!is_status_set)
-						file << "HTTP/1.1 200 OK\r\n";
-					is_status_set = true;
-					content_length = atoi(header.at(1).c_str());
-				}
-				else if (header.at(0) == "Status")
-				{
-					if (is_status_set)
+				if (header.at(0) == "Content-Length"){
+					size_t j = 0;
+					for (; j < header.at(1).size() && std::isspace(header.at(1)[j]); j++); // skip whiltespaces
+					for (; j < header.at(1).size(); j++)
+						if (isdigit(header.at(1)[j]) == 0)
+							throw 501;
+					if (header.at(1).size() > 18)
 						throw 500;
-					file << "HTTP/1.1 " << header.at(1);
-					is_status_set = true;
+					content_length = atoll(header.at(1).c_str());
 				}
+				else if (header.at(0) == "Status" && status_code.empty())
+					status_code = header.at(1);
 				else
-				{
-					if (!is_status_set)
-						file << "HTTP/1.1 200 OK\r\n";
-					file << header_lines[i] << "\r\n";
-					file << header_lines[i] << "\r\n"; // warning
-					is_status_set = true;
-				}
+					response_headers +=  header_lines[i] += "\r\n";
 			}
+			else
+				response_headers +=  header_lines[i] += "\r\n";
+
 		}
 		if (content_length == SIZE_MAX || content_length  > _output.length() - heaers_end_pos)
 			content = _output.substr(heaers_end_pos + boundary_len);
 		else
 			content = _output.substr(heaers_end_pos + boundary_len, content_length);
 	}
+	file << "HTTP/1.1 " << (status_code.empty() ? "200 OK" : status_code) << "\r\n";
+	file << "Server: webserv/29.16666666729\r\n";
+	file << response_headers;
 	file << "Content-Length: " << content.length() << "\r\n";
 	file << "\r\n";
 	file << content;
