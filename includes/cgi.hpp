@@ -26,6 +26,7 @@ class CGI
 		int			_stderr_copy;
 		int			_stdin_copy;
 		string		_output;
+		int			_err_file_fd;
 	public:
 		void		init(void);
 		int			execute(void);

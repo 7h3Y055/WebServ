@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import sys
-import cgi
+import html
+
+
+
 
 # Read input from stdin
 input_data = sys.stdin.read().strip()
@@ -39,7 +42,7 @@ html_template = f"""Content-Type: text/html
 </head>
 <body>
     <div class="center-frame">
-        <p>{cgi.escape(input_data)}</p>
+        <p>{html.escape(input_data)}</p>
     </div>
 </body>
 </html>

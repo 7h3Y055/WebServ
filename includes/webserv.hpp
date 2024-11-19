@@ -43,6 +43,7 @@
 
 #define SEND_BUFFER_SIZE 2048
 #define TIMEOUT 5
+#define ERROR_FILE "logs/error.log"
 
 using namespace std;
 

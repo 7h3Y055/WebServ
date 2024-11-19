@@ -4,41 +4,30 @@ extern char **environ;
 int CGI::execute(void)
 {
 	init();
-	int _err_fd[2];
 
 	if (pipe(_fd) == -1) // create pipe
-		throw 500;
-	if (pipe(_err_fd) == -1) // create pipe
 		throw 500;
 	if ((_cgi_child = fork()) == -1) // fork process
 		throw 500;
 	if (_cgi_child == 0) // child process
 	{
-		if (_req.get_method() == "POST")
-		{
-			cout << "POST body_path: " << _body_path.c_str() << endl;
-			int fd = open(_body_path.c_str(), O_RDONLY);
-			perror("open");
-			if (fd == -1)
-				throw 501;
-			dup2(fd, STDIN_FILENO);
-		}
-		else
-			close(STDIN_FILENO);
+		int fd = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666); // open body file	
+		if (fd == -1)
+			throw 501;
+		if (dup2(fd, STDIN_FILENO) == -1)
+			throw 500;
 		if (dup2(_fd[1], STDOUT_FILENO) == -1) // redirect stdout to pipe
 			throw 500;
-		if (dup2(_err_fd[1], STDERR_FILENO) == -1) // redirect stderr to pipe
+		if (dup2(_err_file_fd, STDERR_FILENO) == -1) // redirect stderr to error file
 			throw 500;
 		if (close(_fd[1]) || close(_fd[0])) // close write end and read end of pipe
-			throw 500;
-		if (close(_err_fd[1]) || close(_err_fd[0])) // close write end and read end of pipe
 			throw 500;
 		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
 		execve(_cgi_path.c_str(), (char **)argv, environ);
 		throw 501;
 	}
-	if (close(_fd[1]) || close(_err_fd[1])) // close write end of pipe
-		throw 501;
+	if (close(_fd[1])) // close write end of pipe
+		throw 500;
 	waitpid(_cgi_child, NULL, 0);
 	while (1)
 	{
@@ -54,22 +43,21 @@ int CGI::execute(void)
 	}
 	if (-1 == close(_fd[0])) // close read end of pipe
 		throw 501;
-	{
-		char buffer[10];
-		int bytes_read = read(_err_fd[0], buffer, 10);
-		if (bytes_read == -1)
-			throw 500;
-		if (bytes_read)
-			throw 501;
-	}
+	if (-1 == close(_err_file_fd)) // close error file
+		throw 500;
 	return (0);
 }
 
 void	CGI::init(void)
 {
 	cout << _req.get_method() << endl;
+	_err_file_fd = open(ERROR_FILE, O_WRONLY | O_CREAT | O_APPEND, 0666); // open error file
+	if (_err_file_fd == -1)
+		throw 500;
 	_body_path = _req.get_body_path();
 	_path = _loc.getRoot() + get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0);
+	if (access(_path.c_str(), F_OK) == -1)
+		throw 404;
 	_filename = get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).c_str();
 	_cgi_path = _loc.getCgi().at(_filename.substr(_filename.find_last_of('.')));
 	_content_length = _req.get_fixed_length();
@@ -133,6 +121,7 @@ string		CGI::get_response(void)
 				{
 					if (!is_status_set)
 						file << "HTTP/1.1 200 OK\r\n";
+					file << header_lines[i] << "\r\n";
 					file << header_lines[i] << "\r\n"; // warning
 					is_status_set = true;
 				}
