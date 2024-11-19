@@ -9,7 +9,7 @@ class Response
         int _status_code;
         std::string _status_message;
         std::map<std::string, std::string> _headers;
-        std::vector<char> _body; // HERE
+        std::vector<char> _body;
         std::string body_file_path;
     public:
 

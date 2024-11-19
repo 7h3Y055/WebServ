@@ -13,7 +13,6 @@
 #include <netdb.h>      // getaddrinfo, freeaddrinfo, getprotobyname
 #include <sys/select.h> // select
 #include <poll.h>       // poll
-// #include <sys/epoll.h>  // epoll_create, epoll_ctl, epoll_wait
 #include <signal.h>     // signal, kill
 #include <sys/wait.h>   // waitpid
 #include <fcntl.h>      // fcntl
@@ -27,10 +26,10 @@
 #include <deque>
 #include <list>
 #include <iomanip>
-// include epoll.h
 #include <sys/epoll.h>  
 #include <algorithm>
 #include <arpa/inet.h>
+#include <limits>
 
 #include "request.hpp"
 #include "Response.hpp"
@@ -39,19 +38,18 @@
 #include "client.hpp"
 #include "delete.hpp"
 #include "cgi.hpp"
-#include <limits>
 
 #define SEND_BUFFER_SIZE 2048
 #define TIMEOUT 5
 #define ERROR_FILE "logs/error.log"
+
+
 
 using namespace std;
 
 
 
 extern vector <Serv> servers;
-
-
 
 
 void _Create_Servers();

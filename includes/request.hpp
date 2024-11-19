@@ -19,7 +19,6 @@ class Request
 {
     private:
         RequestState _request_state;
-        // bool _is_request_CGI;
         int _Host_found;
 
         std::vector<char> _Buffer;
@@ -42,7 +41,6 @@ class Request
         Response *post_Response();
 
         RequestState &request_state();
-        // bool is_request_CGI();
         std::string &get_method();
         std::string &get_version();
         std::string &get_file_name();

@@ -17,7 +17,6 @@ class location
         std::string root;
     public:
         std::map<std::string, std::string> already_set;
-        // Getters
         std::string &getPath() { return path; }
         std::vector<std::string> &getMethods() { return methods; }
         std::vector<std::string> &getIndex() { return index; }
@@ -27,13 +26,11 @@ class location
         std::map<int, std::string> &getRedirection() { return redirection; }
         std::string &getRoot() { return root; }
 
-        // Setters
         void setPath(const std::string &p) { path = p; }
         void setIndex(const std::vector<std::string> &i) { index = i; }
         void setDirectoryListing(int dl) { directory_listing = dl; }
         void setUploadPath(const std::string &up) { upload_path = up; }
         void setRoot(const std::string &r) { root = r; }
-        // void setRedirection(const int code, const std::string &r) { redirection[code] = r; }
 
         location();
         ~location();
@@ -56,7 +53,6 @@ class Serv
         
     public:
         std::map<std::string, std::string> already_set;
-        // Getters
         int &getPort() { return port; }
         std::string &getHost() { return host; }
         std::vector<std::string> &getServerName() { return server_name; }

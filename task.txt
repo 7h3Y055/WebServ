@@ -1,7 +1,0 @@
-	1 - no more hardcoding for the http code .
-	2 - the function should return a file .
-	3 - the output should contain header .
-	4 - check for the error in the cgi
-	5 - query strings not working
-	6 - post data (all the inputs not working ).
-	7 - the output file should be in the client class !!!!!!!!!!!!

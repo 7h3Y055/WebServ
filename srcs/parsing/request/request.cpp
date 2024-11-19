@@ -87,7 +87,7 @@ unsigned long long hex2ll(std::string &str){
     ss >> length;
 
     if (ss.fail()){
-        throw 400; // HERE 
+        throw 400;
     }
 
     return length;
@@ -212,7 +212,6 @@ void    Request::fill_request(std::vector<char> &buf){
                 _File_name = _URI.substr(0, _URI.find('?'));
                 if (_File_name.find("..") != string::npos)
                     throw 403;
-                // _is_request_CGI = is_CGI(_File_name, get_server_index(), 0);
             }
             else{
                 throw 400;
@@ -360,7 +359,6 @@ Response *Request::execute_request()
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
-        // return delete_Response();
     }
 
     return createResponse(404, this);
@@ -371,9 +369,6 @@ RequestState &Request::request_state(){
     return this->_request_state;
 }
 
-// bool Request::is_request_CGI(){
-//     return this->_is_request_CGI;
-// }
 
 std::string &Request::get_method(){
     return this->_Method;
@@ -414,13 +409,6 @@ std::string &Request::get_header(std::string key){
 std::string &Request::get_body_path(){
     return this->_Body_path;
 }
-
-
-
-
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ //
-
 
 
 Request::Request(): _request_state(HTTP_REQUEST_LINE), _Host_found(false), _Fixed_length(0), chunked_state(false), chunked_length(0){

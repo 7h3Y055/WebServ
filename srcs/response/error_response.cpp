@@ -100,7 +100,6 @@ Response *createResponse(int code, Request *req){
     res->set_status_message(get_error_message(code));
     res->set_header("Content-Type", "text/html");
     
-    // cout << get_error_path(code, req->get_server_index()).size() << endl;
     std::vector<char> body = get_error_body(get_error_path(code, req->get_server_index()));
     res->set_body(body);
     return res;

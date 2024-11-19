@@ -3,7 +3,7 @@
 location get_location(std::string file_name, Serv &config)
 {
     location loc;
-    int loc_n = 0;
+    size_t loc_n = 0;
     for (size_t i = 0; i < config.getLocations().size(); i++)
     {
         if (file_name.find(config.getLocations()[i].getPath()) != string::npos)
@@ -33,7 +33,7 @@ std::string generate_random_name()
     std::string base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
 
     while (true){
-        name = "/tmp/webserv_"; //HERE
+        name = "/tmp/webserv_"; // HERE
         for (size_t n = 0; n < 64; n++)
             name += base[my_rand() % base.size()];
         if (access(name.c_str(), F_OK) == -1){

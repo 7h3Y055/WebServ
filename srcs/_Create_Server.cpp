@@ -127,7 +127,7 @@ int get_server_index_(string &host)
             if (pos2 != string::npos)
             {
                 if (host.substr(pos2 + 1) == _to_string(servers[i].getPort()) &&
-                    servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // HERE warrning !!!!!!!!!!!!!!!
+                    servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2))
                     {
                         return i;
                     }
