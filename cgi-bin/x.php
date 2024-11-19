@@ -8,7 +8,7 @@ $get_value = isset($_GET['get_value']) ? $_GET['get_value'] : 'No GET value prov
 
 // Get the 'post_value' parameter from the POST request body
 $post_value = isset($_POST['post_value']) ? $_POST['post_value'] : 'No POST value provided';
-f
+
 ?>
 <html>
 <head>
