@@ -49,26 +49,13 @@ std::vector<char> &Response::get_response(){
     }
 
     // add extra headers
-    if (_req.get_transfer_mechanism() == "Chunked"){
-        push_str(*response, "Transfer-Encoding: chunked\r\n\r\n");
-    }
-    else{
-        ss.str("");
-        ss << _body.size();
-        push_str(*response,  "Content-Length: " + ss.str() + "\r\n\r\n");
-    }
 
-    if (_req.get_transfer_mechanism() == "Chunked"){
-        ss.str("");
-        ss << std::hex << _body.size();
-        push_str(*response, ss.str() + "\r\n");
-    }
+    ss.str("");
+    ss << _body.size();
+    push_str(*response,  "Content-Length: " + ss.str() + "\r\n\r\n");
 
     response->insert(response->end(), _body.begin(), _body.end());
     push_str(*response, "\r\n");
-    
-    if (_req.get_transfer_mechanism() == "Chunked")
-        push_str(*response, "0\r\n\r\n");
 
     return *response;
 }
@@ -89,11 +76,15 @@ void Response::set_body(std::vector<char> &body){
     this->_body = body;
 }
 
+std::string &Response::body_file_path_ref(){
+    return this->body_file_path;
+}
 
 
 Response::Response(Request &req): _req(req)
 {
 }
+
 Response::~Response()
 {
 }

@@ -147,14 +147,16 @@ double convert_to_byte(std::string str){
     if (n < 0)
         throw std::runtime_error("Error: invalid client_max_body_size");
     if (last == 'k' || last == 'K')
-        return n * 1024;
+        n = n * 1024;
     else if (last == 'm' || last == 'M')
-        return n * 1024 * 1024;
+        n = n * 1024 * 1024;
     else if (last == 'g' || last == 'G')
-        return n * 1024 * 1024 * 1024;
+        n = n * 1024 * 1024 * 1024;
     else
-        return n;
-    return 0;
+        n = n;
+    if (n > std::numeric_limits<long long>::max() || n < std::numeric_limits<long long>::min())
+        throw std::runtime_error("Error: client_max_body_size too large");
+    return n;
 }
 
 void init_server(Serv &server, std::vector<string> &strs){
@@ -225,10 +227,12 @@ void init_server(Serv &server, std::vector<string> &strs){
             throw std::runtime_error("Error: invalid error_page");
         if (server.getErrorPages().find(error_page[0]) != server.getErrorPages().end())
             throw std::runtime_error("Error: duplicate error_page");
+        if (error_page[1].size() < 5 || error_page[1].substr(error_page[1].size() - 5) != ".html")
+            throw std::runtime_error("Error: invalid error_page");
         server.getErrorPages()[error_page[0]] = error_page[1];
     }
     else{
-        throw std::runtime_error("Error: invalid server4");
+        throw std::runtime_error("Error: invalid server");
     }
 }
 
@@ -327,15 +331,15 @@ void check_duplacate_locations(Serv &server){
 
 void check_paths(Serv &server){
 
-    if (!pathExists(server.getRoot()))
-        throw std::runtime_error("Error: invalid root '" + server.getRoot() + "'");
+    // if (!pathExists(server.getRoot()))
+    //     throw std::runtime_error("Error: invalid root '" + server.getRoot() + "'");
     for (map<string, string>::iterator it = server.getErrorPages().begin(); it != server.getErrorPages().end(); ++it) {
         if (!pathExists(it->second))
             throw std::runtime_error("Error: invalid error page '" + it->second + "'");
     }
     for (size_t i = 0; i < server.getLocations().size(); ++i) {
-        if (!pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getPath()))
-            throw std::runtime_error("Error: invalid location root '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getPath() + "'");
+        // if (!pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getPath()))
+        //     throw std::runtime_error("Error: invalid location root '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getPath() + "'");
         if (server.getLocations()[i].getUploadPath() != "" && !pathExists(server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath()))
             throw std::runtime_error("Error: invalid upload path '" + server.getLocations()[i].getRoot() + server.getLocations()[i].getUploadPath() + "'");
         for (map<string, string>::iterator it = server.getLocations()[i].getCgi().begin(); it != server.getLocations()[i].getCgi().end(); ++it) {

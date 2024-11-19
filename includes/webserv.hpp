@@ -37,6 +37,12 @@
 #include "config.hpp"
 #include "_Get.hpp"
 #include "client.hpp"
+#include "delete.hpp"
+#include "cgi.hpp"
+#include <limits>
+
+#define SEND_BUFFER_SIZE 2048
+#define TIMEOUT 5
 
 using namespace std;
 
@@ -54,3 +60,7 @@ std::string get_extention(Request &req);
 std::string generate_random_name();
 Response *createResponse(int code, Request *req);
 location get_location(std::string file_name, Serv &config);
+string get_CGI_script(std::string file_name, size_t index, size_t start_pos);
+bool is_CGI(std::string file_name, size_t index, size_t start_pos);
+Response *create_redirection(location &loc, Request &req);
+int get_server_index_(string &host);

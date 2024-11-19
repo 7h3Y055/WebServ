@@ -247,7 +247,7 @@ std::vector<char> generate_header(std::ifstream &file, std::string path)
     file.seekg(0, std::ios::end);
     size_t length = file.tellg();
     file.seekg(0, std::ios::beg);
-    content_length += std::to_string(length) + "\r\n"; // HERE warnning !!!!!!!!!!!!
+    content_length += _to_string(length) + "\r\n";
     header.insert(header.end(), content_length.begin(), content_length.end());
     header.push_back('\r');
     header.push_back('\n');

@@ -73,7 +73,6 @@ class Serv
         Serv();
         ~Serv();
         
-        struct sockaddr_in addr;
 };
 
 

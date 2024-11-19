@@ -61,13 +61,18 @@ std::string get_error_message(int code){
 }
 
 std::string get_error_path(int code, int index){
+    if (index < 0)
+        index = 0;
+    string key;
     if (!(code < 999 && code > 0))
         throw 500;
     string str;
     stringstream ss;
     ss << code;
-    return servers[index].getErrorPages()[ss.str()];
-    // return "error_pages/" + ss.str() +".html";
+    if (ss.fail())
+        throw 400;
+    ss >> key;
+    return servers[index].getErrorPages()[key];
 }
 
 std::vector<char> get_error_body(const std::string& filename) {

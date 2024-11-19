@@ -138,4 +138,9 @@ class Client
         bool sending_file;
 
         bool header_flag;
+        std::string path_file;
+
+        std::ifstream cgi_file_stream;
+        bool cgi_header_flag;
+        long long cgi_file_offset;
 };

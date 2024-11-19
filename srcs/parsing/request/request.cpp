@@ -43,7 +43,6 @@ std::pair<std::string, std::string> fill_header(std::string header){
     pair.second = pair.second.substr(0, pair.second.find('\r'));
     remove_white_spaces_edges(pair.second);
     if (std::isspace(pair.first[0])){
-        std::cout << header << std::endl;
         throw 400;
     }
     return pair;
@@ -80,7 +79,6 @@ unsigned long long hex2ll(std::string &str){
     unsigned long long length;
     for (size_t i = 0; i < str.size(); ++i) {
         if (!ft_ishex(str[i])) {
-        cout << "111111111: " << string(str.begin(), str.begin() + 7) << endl;
             throw 400;
         }
     }
@@ -89,7 +87,6 @@ unsigned long long hex2ll(std::string &str){
     ss >> length;
 
     if (ss.fail()){
-        cout << "111111111: " << endl;
         throw 400; // HERE 
     }
 
@@ -126,6 +123,7 @@ bool buffer_have_nl(std::vector<char> &buf){
 
 std::string get_http_line(std::vector<char> *buf){
     std::string line;
+    
     for (size_t i = 0; i < buf->size() - 1; i++){
         if ((*buf)[i] == '\r' && (*buf)[i + 1] == '\n'){
             line = std::string(buf->begin(), buf->begin() + i);
@@ -136,28 +134,63 @@ std::string get_http_line(std::vector<char> *buf){
     return line;
 }
 
-bool is_CGI(std::string file_name, size_t index){
-    file_name.reserve();
-    
-    size_t pos = file_name.find_last_of('.');
-    if (pos == std::string::npos)
-        return false;
-    file_name.reserve();
-    string extention = file_name.substr(pos, file_name.size());
+bool is_CGI(std::string file_name, size_t index, size_t start_pos){
     location loc = get_location(file_name, servers[index]);
-    
-    if (loc.getCgi()[extention].size() != 0)
-        return true;
+    if (loc.getCgi().size() == 0 || start_pos >= file_name.size())
+        return false;
 
+    size_t i = start_pos;
+
+    for (; file_name[i] == '/'; i++);
+    string file = file_name.substr(i);
+    size_t pos2 = file.find_first_of('/', start_pos);
+
+    size_t pos = file.find_last_of('.', pos2);
+    if (pos != std::string::npos){
+        string extention = file.substr(pos, pos2 - pos);
+        if (loc.getCgi()[extention].size() != 0){
+            return true;
+        }
+        else if (pos2 != std::string::npos){
+            return is_CGI(file_name, index, pos2 + 1);
+        }
+    }
+    else if (pos2 <= file_name.size()){
+        return is_CGI(file_name, index, pos2 + 1);
+    }
     return false;
+}
+
+string get_CGI_script(std::string file_name, size_t index, size_t start_pos){
+    location loc = get_location(file_name, servers[index]);
+
+    size_t i = start_pos;
+
+    for (; file_name[i] == '/'; i++);
+    string file = file_name;
+    file = file.substr(i);
+    size_t pos2 = file.find_first_of('/', start_pos);
+
+    size_t pos = file.find_last_of('.', pos2);
+    if (pos != std::string::npos){
+        string extention = file.substr(pos, pos2 - pos);
+        if (loc.getCgi()[extention].size() != 0){
+            return file_name.substr(0, file_name.find(extention) + extention.size());
+        }
+        else if (pos2 != std::string::npos){
+            return get_CGI_script(file_name, index, pos2 + 1);
+        }
+    }
+    else if (pos2 <= file_name.size()){
+        return get_CGI_script(file_name, index, pos2 + 1);
+    }
+    throw 500;
 }
 
 void    Request::fill_request(std::vector<char> &buf){
     _Buffer.insert(_Buffer.end(), buf.begin(), buf.end());
     std::string line;
-    // static bool chunked_state = false;
-    // static unsigned long long chunked_length = 0;
-    
+
     while (_Buffer.size() > 0 && buffer_have_nl(_Buffer, _request_state, _Transfer_Mechanism) && _request_state != HTTP_COMPLETE)
     {
         if (_request_state == HTTP_REQUEST_LINE){
@@ -165,6 +198,13 @@ void    Request::fill_request(std::vector<char> &buf){
             if (line.empty())
                 continue;
             std::vector<std::string> strs = split_string_with_multiple_delemetres(line, " \t\r\n");
+            if (_Method != "POST" || (_Transfer_Mechanism == "Fixed" && _Fixed_length == 0)){
+            {
+                _Body_path =  generate_random_name();
+                _request_state = HTTP_COMPLETE;
+
+            }
+            }
             if (strs.size() == 3){
                 _Method = strs[0];
                 _URI = check_URI(strs[1]);
@@ -172,7 +212,7 @@ void    Request::fill_request(std::vector<char> &buf){
                 _File_name = _URI.substr(0, _URI.find('?'));
                 if (_File_name.find("..") != string::npos)
                     throw 403;
-                _is_request_CGI = is_CGI(_File_name, get_server_index());
+                // _is_request_CGI = is_CGI(_File_name, get_server_index(), 0);
             }
             else{
                 throw 400;
@@ -180,8 +220,11 @@ void    Request::fill_request(std::vector<char> &buf){
             _request_state = HTTP_HEADER;
         }
         if (_request_state == HTTP_HEADER){
+            if (_Buffer.empty() && _Host_found != 1)
+                throw 400;
             line = get_http_line(&_Buffer);
             line = line.substr(0, line.find("\r\n"));
+
             if (line.empty()){
                 if (_Host_found != 1){
                     throw 400;
@@ -203,9 +246,11 @@ void    Request::fill_request(std::vector<char> &buf){
                         throw 400;
                 }
                 if (_Method != "POST" || (_Transfer_Mechanism == "Fixed" && _Fixed_length == 0)){
+                    set_server_index(get_server_index_(get_Host()));
                     _request_state = HTTP_COMPLETE;
                 }
                 else{
+                    set_server_index(get_server_index_(get_Host()));
                     _request_state = HTTP_BODY;
                 }
                 continue ;
@@ -228,7 +273,7 @@ void    Request::fill_request(std::vector<char> &buf){
             if (!file.is_open())
                 throw 500;
             if (_Transfer_Mechanism == "Fixed"){
-                size_t size = (_Fixed_length < _Buffer.size() ? _Fixed_length : _Buffer.size());
+                size_t size = (static_cast<size_t>(_Fixed_length) < _Buffer.size() ? _Fixed_length : _Buffer.size());
                 file.write(&(*_Buffer.begin()), size);
                 if (file.fail())
                     throw 500;
@@ -247,6 +292,8 @@ void    Request::fill_request(std::vector<char> &buf){
                     }
                     std::string len = get_http_line(&_Buffer);
                     chunked_length = hex2ll(len);
+                    if (chunked_length > 65536)
+                        throw 413;
                     chunked_state = true;
                     if (chunked_length == 0){
                         _request_state = HTTP_COMPLETE;
@@ -290,17 +337,14 @@ Response *create_redirection(location &loc, Request &req){
     return res;
 }
 
-Response *Request::execute_request(){
+Response *Request::execute_request()
+{
     location loc = get_location(get_file_name(), servers[get_server_index()]);
-
-    cout << get_file_name() << endl;
 
     if (loc.getRedirection().size() == 1){
         cout << "[Redirection]" << endl;
         return create_redirection(loc, *this);
     }
-
-
     size_t i;
     for (i = 0; i < loc.getMethods().size(); i++)
         if (loc.getMethods()[i] == _Method)
@@ -309,15 +353,8 @@ Response *Request::execute_request(){
         throw 405;
     
 
-    if (is_request_CGI()){
-        std::cout << "[CGI]" << std::endl;
-        // return CGI_Response();
-    }
-    else if (_Method == "GET"){
-        std::cout << "[GET]" << std::endl;
-        return get_Response(*this);
-    }
-    else if (_Method == "POST"){
+
+    if (_Method == "POST"){
         std::cout << "[POST]" << std::endl;
         return post_Response();
     }
@@ -334,9 +371,9 @@ RequestState &Request::request_state(){
     return this->_request_state;
 }
 
-bool Request::is_request_CGI(){
-    return this->_is_request_CGI;
-}
+// bool Request::is_request_CGI(){
+//     return this->_is_request_CGI;
+// }
 
 std::string &Request::get_method(){
     return this->_Method;
@@ -386,7 +423,7 @@ std::string &Request::get_body_path(){
 
 
 
-Request::Request(): _request_state(HTTP_REQUEST_LINE), _is_request_CGI(false), _Host_found(false), _Fixed_length(0), chunked_state(false), chunked_length(0){
+Request::Request(): _request_state(HTTP_REQUEST_LINE), _Host_found(false), _Fixed_length(0), chunked_state(false), chunked_length(0){
 }
 
 Request::~Request(){
