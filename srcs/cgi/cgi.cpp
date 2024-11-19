@@ -67,6 +67,7 @@ void	CGI::init(void)
 	(
 		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
+		setenv("HTTP_COOKIE", _req.get_header("Cookie").c_str(), 1) |
 		setenv("SERVER_NAME", "webserv", 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |
 		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1) |
@@ -82,10 +83,6 @@ void	CGI::init(void)
 
 string		CGI::get_response(void)
 {
-	cout << "===========================" << endl;
-	cout << _output << endl;
-	cout << "===========================" << endl;
-
 	string	output_file_path = generate_random_name();
 	unsigned long long	content_length = SIZE_MAX;
 	string		status_code;
