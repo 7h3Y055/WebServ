@@ -133,7 +133,7 @@ string		CGI::get_response(void)
 				{
 					if (!is_status_set)
 						file << "HTTP/1.1 200 OK\r\n";
-					file << header_lines[i];
+					file << header_lines[i] << "\r\n"; // warning
 					is_status_set = true;
 				}
 			}

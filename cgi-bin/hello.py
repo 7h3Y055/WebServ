@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cgi
+# import cgi
 
 # Ensure the correct content-type header is printed for HTML
 print("Status: 200 OK\r")
