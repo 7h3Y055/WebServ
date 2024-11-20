@@ -284,7 +284,7 @@ void _Run_Server()
                         {
                             Response *res = create_redirection(loc, clients[client_fd]->req);
                             std::vector<char> response_binary = res->get_response();
-                            ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
+                            ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
                             std::cout << "Redirected successfully" << std::endl;
                             if (ret == -1)
                             {
@@ -310,7 +310,7 @@ void _Run_Server()
                                 clients[client_fd]->path_file = cgi.get_response();
                                 clients[client_fd]->cgi_file_stream.open(clients[client_fd]->path_file.c_str(), std::ios::binary);
                                 if (!clients[client_fd]->cgi_file_stream.is_open())
-                                    throw 404;
+                                    throw 403;
                                 clients[client_fd]->cgi_file_offset = 0;
                                 clients[client_fd]->cgi_header_flag = true;
                                 clients[client_fd]->sending_file = true;
@@ -331,10 +331,18 @@ void _Run_Server()
                                 }
                                 else
                                 {
-                                    ssize_t ret = send(client_fd, buffer, bytes_read, 0);
+                                    ssize_t ret = send(client_fd, buffer, bytes_read, MSG_NOSIGNAL);
                                     if (ret != -1)
                                     {
                                         clients[client_fd]->update_last_read();
+                                    }
+                                    if (ret == -1)
+                                    {
+                                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                        delete clients[client_fd];
+                                        clients.erase(client_fd);
+                                        close(client_fd);
+                                        continue;
                                     }
                                     clients[client_fd]->cgi_file_offset += bytes_read;
                                 }
@@ -367,7 +375,7 @@ void _Run_Server()
                                     Response *res = createResponse(301, &clients[client_fd]->req);
                                     res->set_header("Location", resources + '/');
                                     vector<char> response_binary = res->get_response();
-                                    ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), 0);
+                                    ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
                                     if (ret == -1)
                                     {
                                         std::cerr << "Send failed" << std::endl;
@@ -405,15 +413,10 @@ void _Run_Server()
                                 std::vector<char> body(content.begin(), content.end());
                                 res->set_body(body);
                                 std::vector<char> response_binary = res->get_response();
-                                size_t start = 0;
-                                size_t end = 0;
-                                while (start < response_binary.size())
+                                ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
+                                if (ret == -1)
                                 {
-                                    end = start + 2048;
-                                    if (end > response_binary.size())
-                                        end = response_binary.size();
-                                    send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
-                                    start = end;
+                                    std::cerr << "Send failed" << std::endl;
                                 }
                                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                                 delete clients[client_fd];
@@ -428,17 +431,25 @@ void _Run_Server()
                                 {
                                     clients[client_fd]->file_stream.open(path.c_str(), std::ios::binary);
                                     if (!clients[client_fd]->file_stream.is_open())
-                                        throw 404;
+                                        throw 403;
                                     clients[client_fd]->file_offset = 0;
                                     clients[client_fd]->sending_file = true;
                                     clients[client_fd]->header_flag = true;
                                     std::vector<char> header = generate_header(clients[client_fd]->file_stream, path);
                                     for (size_t i = 0; i < header.size(); i++)
                                         buffer[i] = header[i];
-                                    ssize_t ret = send(client_fd, buffer, header.size(), 0);
+                                    ssize_t ret = send(client_fd, buffer, header.size(), MSG_NOSIGNAL);
                                     if (ret != -1)
                                     {
                                         clients[client_fd]->update_last_read();
+                                    }
+                                    if (ret == -1)
+                                    {
+                                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                        delete clients[client_fd];
+                                        clients.erase(client_fd);
+                                        close(client_fd);
+                                        continue;
                                     }
                                 }
                                 else
@@ -459,10 +470,18 @@ void _Run_Server()
                                     }
                                     else
                                     {
-                                        ssize_t ret = send(client_fd, buffer, bytes_read, 0);
+                                        ssize_t ret = send(client_fd, buffer, bytes_read, MSG_NOSIGNAL); // HNA MSG_NOSIGNAL
                                         if (ret != -1)
                                         {
                                             clients[client_fd]->update_last_read();
+                                        }
+                                        if (ret == -1)
+                                        {
+                                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                            delete clients[client_fd];
+                                            clients.erase(client_fd);
+                                            close(client_fd);
+                                            continue;
                                         }
                                         clients[client_fd]->file_offset += bytes_read;
                                     }
@@ -473,15 +492,15 @@ void _Run_Server()
                         {
                             Response *res = clients[client_fd]->req.execute_request();
                             std::vector<char> response_binary = res->get_response();
-                            size_t start = 0;
-                            size_t end = 0;
-                            while (start < response_binary.size())
+                            ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
+                            if (ret == -1)
                             {
-                                end = start + 2048;
-                                if (end > response_binary.size())
-                                    end = response_binary.size();
-                                send(client_fd, &(*response_binary.begin()) + start, end - start, 0);
-                                start = end;
+                                std::cerr << "Send failed" << std::endl;
+                                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                                delete clients[client_fd];
+                                clients.erase(client_fd);
+                                close(client_fd);
+                                continue;
                             }
                             if (clients[client_fd]->get_req().get_body_path().size() != 0){
                                 cout << "Remove: " << clients[client_fd]->get_req().get_body_path() << endl;  
@@ -499,7 +518,11 @@ void _Run_Server()
                 {
                     std::cerr << "HTTP code: " << code << " " << get_error_message(code) << '\n';
                     Response *res = createResponse(code, &clients[client_fd]->req);
-                    send(client_fd, &(*res->get_response().begin()), res->get_response().size(), 0);
+                    ssize_t ret = send(client_fd, &(*res->get_response().begin()), res->get_response().size(), 0);
+                    if (ret == -1)
+                    {
+                        std::cerr << "Send failed" << std::endl;
+                    }
                     std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                     delete clients[client_fd];

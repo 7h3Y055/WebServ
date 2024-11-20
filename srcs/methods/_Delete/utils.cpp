@@ -69,5 +69,7 @@ string  DEL::to_string(ssize_t nbr)
 {
     std::stringstream ss;
     ss << nbr;
+    if (ss.fail()) // <== 
+        throw 500;  // <== protecti hadi dyal mustapha
     return ss.str();
 }
