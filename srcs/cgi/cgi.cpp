@@ -51,17 +51,18 @@ int CGI::execute(void)
 void	CGI::init(void)
 {
 	cout << _req.get_method() << endl;
+	string file_path = get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0);
 	_err_file_fd = open(ERROR_FILE, O_WRONLY | O_CREAT | O_APPEND, 0666); // open error file
 	if (_err_file_fd == -1)
 		throw 500;
 	_body_path = _req.get_body_path();
-	_path = _loc.getRoot() + get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0);
+	_path = _loc.getRoot() + get_CGI_script(file_path, _req.get_server_index(), 0);
 	if (access(_path.c_str(), F_OK) == -1)
 		throw 404;
-	_filename = get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).c_str();
+	_filename = get_CGI_script(file_path, _req.get_server_index(), 0).c_str();
 	_cgi_path = _loc.getCgi().at(_filename.substr(_filename.find_last_of('.')));
 	_content_length = _req.get_fixed_length();
-	string _query_string = _req.get_URI().substr(get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0).length());
+	string _query_string = _req.get_URI().substr((_req.get_URI().find('?' ) == string::npos ? _req.get_URI().size() : _req.get_URI().find('?')));
 	if (!_query_string.empty())
 		_query_string = _query_string.substr(1);
 	(

@@ -178,13 +178,13 @@ string get_CGI_script(std::string file_name, size_t index, size_t start_pos){
             return file_name.substr(0, file_name.find(extention) + extention.size());
         }
         else if (pos2 != std::string::npos){
-            return get_CGI_script(file_name, index, pos2 + 1);
+            return get_CGI_script(file_name, index, pos2);
         }
     }
     else if (pos2 <= file_name.size()){
-        return get_CGI_script(file_name, index, pos2 + 1);
+        return get_CGI_script(file_name, index, pos2);
     }
-    throw 500;
+    return file_name;
 }
 
 void    Request::fill_request(std::vector<char> &buf){

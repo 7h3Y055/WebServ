@@ -297,8 +297,8 @@ void _Run_Server()
                     }
                     else if (events[i].events & EPOLLOUT && clients[client_fd] && clients[client_fd]->req.request_state() == HTTP_COMPLETE)
                     {
-                        location loc = get_location(get_CGI_script(clients[client_fd]->req.get_file_name(),
-                             clients[client_fd]->req.get_server_index(), 0), servers[clients[client_fd]->req.get_server_index()]);
+                        string file_path = get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0);
+                        location loc = get_location(file_path, servers[clients[client_fd]->req.get_server_index()]);
                         if (loc.getRedirection().size() > 0)
                         {
                             Response *res = create_redirection(loc, clients[client_fd]->req);
@@ -319,8 +319,7 @@ void _Run_Server()
 
 
 
-
-                        if(is_CGI(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0) 
+                        if(is_CGI(file_path, clients[client_fd]->req.get_server_index(), 0) 
                             && clients[client_fd]->req.get_method() != "DELETE")
                         {
                             char buffer[SEND_BUFFER_SIZE];
