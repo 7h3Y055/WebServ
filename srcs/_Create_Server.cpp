@@ -117,7 +117,6 @@ void _Create_Servers()
 
 int get_server_index_(string &host)
 {
-    
     for (size_t i = 0; i < servers.size(); i++)
     {
         for (size_t j = 0; j < servers[i].getServerName().size(); j++)
@@ -166,25 +165,6 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
     }
 }
 
-std::vector<char> _read_file_store_in_vector(std::string &path)
-{
-    std::ifstream file(path.c_str(), std::ios::binary);
-    if (!file.is_open())
-        throw std::runtime_error("File not found");
-    // std::vector <char> header = generate_header(file, path);
-    std::vector<char> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    std::vector<char> response_binary;
-    // response_binary.insert(response_binary.end(), header.begin(), header.end());
-
-    for (size_t i = 0; i < buffer.size(); i++)
-    {
-        response_binary.push_back(buffer[i]);
-    }
-    file.close();
-    return response_binary;
-}
-
-
 void _Run_Server()
 {
     int epoll_fd = epoll_create1(0);
@@ -230,13 +210,14 @@ void _Run_Server()
                         std::cerr << "accept failed: " << strerror(errno) << std::endl;
                         continue;
                     }
-                    int flags = fcntl(client_fd, F_GETFL, 0);
-                    if (flags == -1)
-                        throw std::runtime_error("fcntl F_GETFL failed");
-                    if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1)
-                        throw std::runtime_error("fcntl F_SETFL failed");
-                    // int server_fd = events[i].data.fd;
-                    // int index = get_server_index(server_fd);
+                    // int flags = fcntl(client_fd, F_GETFL, 0);
+                    // if (flags == -1)
+                    //     throw std::runtime_error("fcntl F_GETFL failed");
+                    // if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+                    //     throw std::runtime_error("fcntl F_SETFL failed");
+
+                    if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1)
+                        throw std::runtime_error("fcntl failed");
                     Client *client = new Client(client_fd, addr, -1);
                     client->header_flag = false;
                     client->cgi_header_flag = false;
@@ -317,8 +298,6 @@ void _Run_Server()
                             continue;
                         }
 
-
-
                         if(is_CGI(file_path, clients[client_fd]->req.get_server_index(), 0) 
                             && clients[client_fd]->req.get_method() != "DELETE")
                         {
@@ -344,6 +323,7 @@ void _Run_Server()
                                 size_t bytes_read = clients[client_fd]->cgi_file_stream.gcount();
                                 if (bytes_read == 0)
                                 {
+                                    std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                                     delete clients[client_fd];
                                     clients.erase(client_fd);
@@ -363,15 +343,11 @@ void _Run_Server()
                         }
                         else if (clients[client_fd]->req.get_method() == "GET" ) // GET
                         {
-                            std::cout << "this is from the get whaaaaaaaaaaaaaaaaaaaaaaaaaat" << std::endl;
                             std::string resources = clients[client_fd]->req.get_URI();
                             std::string root = loc.getRoot();
                             std::string path = root + resources;
-                            std::cout << "path == " << path << std::endl;
-                            std::cout << "resources == " << resources << std::endl;
                             if (access(path.c_str(), F_OK) == -1)
                             {
-                                std::cout << "have no access == " << path << std::endl;
                                 throw 404;
                             }
                             std::vector<std::string> index = loc.getIndex();
@@ -386,10 +362,8 @@ void _Run_Server()
                             }
                             if (get_resources_type(path) == "directory")
                             {
-                                cout << "DIRECTORY !!!!!!\n";
                                 if (path[path.size() - 1] != '/')
                                 {
-                                    cout << "REDIRECTION !!!!!!\n";
                                     Response *res = createResponse(301, &clients[client_fd]->req);
                                     res->set_header("Location", resources + '/');
                                     vector<char> response_binary = res->get_response();
@@ -398,7 +372,7 @@ void _Run_Server()
                                     {
                                         std::cerr << "Send failed" << std::endl;
                                     }
-                                    cout << resources + '/' << endl;
+                                    std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                                     delete clients[client_fd];
                                     clients.erase(client_fd);
@@ -407,13 +381,11 @@ void _Run_Server()
                                 }
                                 if (!loc.getDirectoryListing())
                                 {
-                                    std::cout << "no directory listing" << std::endl;
                                     throw 403;
                                 }
                                 std::vector<std::string> directory_content = get_directory_content(path);
                                 if (access(path.c_str(), R_OK) == -1)
                                 {
-                                    std::cout << "permission denied of directory listing" << std::endl;
                                     throw 403;
                                 }
                                 Response *res = new Response(clients[client_fd]->req);
@@ -422,7 +394,12 @@ void _Run_Server()
                                 std::string content = "<html><body><h1>Directory listing</h1><ul>";
                                 for (size_t i = 0; i < directory_content.size(); i++)
                                 {
-                                    content += "<li><a href=\"" + directory_content[i] + "\">" + directory_content[i] + "</a></li>";
+                                    content += "<li><a href=\"" + directory_content[i] + "\">" + directory_content[i];
+                                    if (get_resources_type(path + "/" + directory_content[i]) == "directory")
+                                    {
+                                        content += "/";
+                                    }
+                                    content += "</a></li>";
                                 }
                                 content += "</ul></body></html>";
                                 std::vector<char> body(content.begin(), content.end());
@@ -474,6 +451,7 @@ void _Run_Server()
                                     // std::cout << "buffer: " << buffer << std::endl;
                                     if (bytes_read == 0)
                                     {
+                                        std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                                         delete clients[client_fd];
                                         clients.erase(client_fd);
@@ -491,7 +469,7 @@ void _Run_Server()
                                 }
                             }
                         }
-                        else // for POST & DLETE 
+                        else // for POST & DELETE 
                         {
                             Response *res = clients[client_fd]->req.execute_request();
                             std::vector<char> response_binary = res->get_response();
@@ -509,6 +487,7 @@ void _Run_Server()
                                 cout << "Remove: " << clients[client_fd]->get_req().get_body_path() << endl;  
                                 remove(clients[client_fd]->get_req().get_body_path().c_str());
                             }
+                            std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                             delete clients[client_fd];
                             clients.erase(client_fd);
@@ -521,21 +500,12 @@ void _Run_Server()
                     std::cerr << "HTTP code: " << code << " " << get_error_message(code) << '\n';
                     Response *res = createResponse(code, &clients[client_fd]->req);
                     send(client_fd, &(*res->get_response().begin()), res->get_response().size(), 0);
+                    std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                     delete clients[client_fd];
                     clients.erase(client_fd);
                     close(client_fd);
                 }
-                // catch (...)
-                // {
-                //     std::cerr << "Internal server error" << '\n';
-                //     Response *res = createResponse(500, &clients[client_fd]->req);
-                //     send(client_fd, &(*res->get_response().begin()), res->get_response().size(), 0);
-                //     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                //     delete clients[client_fd];
-                //     clients.erase(client_fd);
-                //     close(client_fd);
-                // }
             }
         }
     }
