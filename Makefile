@@ -14,18 +14,15 @@ INC = -Iincludes
 
 OBJ = $(SRC:.cpp=.o)
 
-.SILENT:
+# .SILENT:
 
 all: $(NAME)
-	# @clear
-	#  @./$(NAME) | cat -e
-	rm -f $(OBJ)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
 	@echo -e "\033[0;32m[webserv] Compiled\033[0m"
 
-%.o: %.cpp
+%.o: %.cpp includes/*.hpp
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 	@echo -e "\033[0;33m[webserv] Compiling \033[0m" $<
 
