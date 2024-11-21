@@ -24,6 +24,9 @@ std::string get_error_message(int code){
     case 405:
         return "Method Not Allowed";
         break;
+    case 408:
+        return "Request Timeout";
+        break;
     case 413:
         return "Request Entity Too Large";
         break;
