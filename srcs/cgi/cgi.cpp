@@ -9,42 +9,57 @@ int CGI::execute(void)
 		throw 500;
 	if ((_cgi_child = fork()) == -1) // fork process
 		throw 500;
+	cout << "_body_path " << _body_path << endl;
 	if (_cgi_child == 0) // child process
 	{
-		int fd = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666); // open body file	
-		if (fd == -1)
-			throw 500;
-		if (dup2(fd, STDIN_FILENO) == -1)
-			throw 500;
-		if (dup2(_fd[1], STDOUT_FILENO) == -1) // redirect stdout to pipe
-			throw 500;
-		if (dup2(_err_file_fd, STDERR_FILENO) == -1) // redirect stderr to error file
-			throw 500;
-		if (close(_fd[1]) || close(_fd[0])) // close write end and read end of pipe
-			throw 500;
+		FILE	*inp_file;
+		FILE	*err_file;
+		if ((inp_file = fopen(_body_path.c_str(), "w+")) == NULL){	// open body file
+			exit(EXIT_FAILURE);
+		}
+		if ((err_file = fopen(ERROR_FILE, "a")) == NULL){ // open error file
+			fclose(inp_file);
+			exit(EXIT_FAILURE);
+		}
+		if (-1 == dup2(fileno(inp_file), STDIN_FILENO) ){
+			fclose(inp_file);
+			fclose(err_file);
+			exit(EXIT_FAILURE);
+		}
+		if (dup2(_fd[1], STDOUT_FILENO) == -1 || -1 == dup2(fileno(err_file), STDERR_FILENO)){ // redirect stdout and stderr to pipe
+			fclose(inp_file);
+			fclose(err_file);
+			exit(EXIT_FAILURE);
+		}
+		if (close(_fd[1]) || close(_fd[0]) || fclose(err_file) == EOF || EOF == fclose(inp_file)){ // close pipe
+			exit(EXIT_FAILURE);
+		}
 		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
 		execve(_cgi_path.c_str(), (char **)argv, environ);
-		throw 500;
+		exit(EXIT_FAILURE);
 	}
-	if (close(_fd[1])) // close write end of pipe
-		throw 500;
-	waitpid(_cgi_child, NULL, 0);
-	while (1)
+	else
 	{
-		char buffer[1024];
-		int bytes_read = read(_fd[0], buffer, 1024);
-		if (bytes_read == -1)
+		if (close(_fd[1]) == -1) // close write end of pipe
 			throw 500;
-		if (bytes_read == 0)
-			break;
-		_output.append(buffer, bytes_read);
-		if (bytes_read < 1024)
-			break;
-	}
-	if (-1 == close(_fd[0])) // close read end of pipe
-		throw 500;
-	if (-1 == close(_err_file_fd)) // close error file
-		throw 500;
+		while (1)
+		{
+			char buffer[1024];
+			int bytes_read = read(_fd[0], buffer, 1024);
+			if (bytes_read == -1)
+				throw 500;
+			if (bytes_read == 0)
+				break;
+			_output.append(buffer, bytes_read);
+			if (bytes_read < 1024)
+				break;
+		}
+		if (-1 == close(_fd[0])) // close read end of pipe
+			throw 500;
+		}
+		waitpid(_cgi_child, &_status, 0);
+		if (WIFEXITED(_status) == 0 || WEXITSTATUS(_status) != 0)
+			throw 500;
 	return (0);
 }
 
