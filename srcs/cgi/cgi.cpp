@@ -12,26 +12,26 @@ int CGI::execute(void)
 	cout << "_body_path " << _body_path << endl;
 	if (_cgi_child == 0) // child process
 	{
-		FILE	*inp_file;
-		FILE	*err_file;
-		if ((inp_file = fopen(_body_path.c_str(), "w+")) == NULL){	// open body file
+		int	inp_file;
+		int	err_file;
+		if ((inp_file = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666)) == -1){ // open input file
 			exit(EXIT_FAILURE);
 		}
-		if ((err_file = fopen(ERROR_FILE, "a")) == NULL){ // open error file
-			fclose(inp_file);
+		if ((err_file = open(ERROR_FILE, O_WRONLY | O_CREAT | O_APPEND, 0666)) == -1){ // open error file
+			close(inp_file);
 			exit(EXIT_FAILURE);
 		}
-		if (-1 == dup2(fileno(inp_file), STDIN_FILENO) ){
-			fclose(inp_file);
-			fclose(err_file);
+		if (-1 == dup2(inp_file, STDIN_FILENO) ){
+			close(inp_file);
+			close(err_file);
 			exit(EXIT_FAILURE);
 		}
-		if (dup2(_fd[1], STDOUT_FILENO) == -1 || -1 == dup2(fileno(err_file), STDERR_FILENO)){ // redirect stdout and stderr to pipe
-			fclose(inp_file);
-			fclose(err_file);
+		if (dup2(_fd[1], STDOUT_FILENO) == -1 || -1 == dup2(err_file, STDERR_FILENO)){ // redirect stdout and stderr to pipe
+			close(inp_file);
+			close(err_file);
 			exit(EXIT_FAILURE);
 		}
-		if (close(_fd[1]) || close(_fd[0]) || fclose(err_file) == EOF || EOF == fclose(inp_file)){ // close pipe
+		if (close(_fd[1]) || close(_fd[0]) || close(err_file) == EOF || EOF == close(inp_file)){ // close pipe
 			exit(EXIT_FAILURE);
 		}
 		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
@@ -42,13 +42,27 @@ int CGI::execute(void)
 	{
 		if (close(_fd[1]) == -1) // close write end of pipe
 			throw 500;
-		struct pollfd pfd;
-		pfd.fd = _fd[0];
-		pfd.events = POLLIN;
+		int flag = fcntl(_fd[0], F_GETFL); // get file status flags
+		if (-1 == flag || fcntl(_fd[0], F_SETFL, flag | O_NONBLOCK) == -1) // set file status flags
+			throw 500;
+		int epoll_fd = epoll_create(1); // create epoll instance
+		if (epoll_fd == -1)
+			throw 500;
+		struct epoll_event event;
+		event.events = EPOLLIN; // monitor for incoming data
+		event.data.fd = _fd[0];
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _fd[0], &event) == -1) // add the pipe's read end to the epoll instance
+			throw 500;
+		struct epoll_event events[1]; // array to hold triggered events
 		char buffer[1024];
 		std::time_t start_time = std::time(0);
 		while (1)
 		{
+			int r_status = waitpid(_cgi_child, &_status, WNOHANG);
+			if (r_status == -1)
+				throw 500;
+			if (r_status == _cgi_child)
+				break;
 			std::time_t elapsed = std::time(0) - start_time;
 			if (elapsed >= TIMEOUT){
 				kill(_cgi_child, SIGKILL); // Kill child process
@@ -56,38 +70,31 @@ int CGI::execute(void)
 				close(_fd[0]); // close read end of pipe
 				throw 408;
 			}
-			int poll_result = poll(&pfd, 1, 100);
-			if (poll_result > 0){
-				if (pfd.revents & POLLIN)
-				{
-					ssize_t bytes_read = read(_fd[0], buffer, sizeof(buffer) - 1);
-					if (bytes_read > 0)
-					{
-						buffer[bytes_read] = '\0'; // Null-terminate the string
-						_output += buffer;
-					}
-					else if (bytes_read == 0)
-						break;
-					else if (bytes_read == -1)
-					{
-						kill(_cgi_child, SIGKILL); // Kill child process
-						waitpid(_cgi_child, &_status, 0); // verify child process
-						close(_fd[0]);
-						throw 500;
-					}
-				}
-			}
-			else if (poll_result == -1){
+			std::time_t remaining_time = TIMEOUT - elapsed;
+			int event_count = epoll_wait(epoll_fd, events, 1, remaining_time * 1000);
+			if (event_count == -1)
+			{
 				kill(_cgi_child, SIGKILL); // Kill child process
 				waitpid(_cgi_child, &_status, 0); // Reap child process
 				close(_fd[0]); // close read end of pipe
 				throw 500;
 			}
+			else if (event_count == 0)
+				continue;
+			if (events[0].events & EPOLLIN) // handle readable pipe
+			{
+				ssize_t bytes_read = read(_fd[0], buffer, sizeof(buffer) - 1);
+				if (bytes_read > 0)
+				{
+					buffer[bytes_read] = '\0'; // Null-terminate the string
+					_output += buffer;
+				}
+				else if (bytes_read == 0)
+					break;
+			}
 		}
-		waitpid(_cgi_child, &_status, 0);
-		if (WIFEXITED(_status) == 0 || WEXITSTATUS(_status) != 0)
+		if (close(_fd[0]) == -1) // close read end of pipe
 			throw 500;
-		close(_fd[0]);
 	}
 	return (0);
 }
