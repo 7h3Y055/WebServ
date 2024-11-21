@@ -42,24 +42,53 @@ int CGI::execute(void)
 	{
 		if (close(_fd[1]) == -1) // close write end of pipe
 			throw 500;
+		struct pollfd pfd;
+		pfd.fd = _fd[0];
+		pfd.events = POLLIN;
+		char buffer[1024];
+		std::time_t start_time = std::time(0);
 		while (1)
 		{
-			char buffer[1024];
-			int bytes_read = read(_fd[0], buffer, 1024);
-			if (bytes_read == -1)
+			std::time_t elapsed = std::time(0) - start_time;
+			if (elapsed >= TIMEOUT){
+				kill(_cgi_child, SIGKILL); // Kill child process
+				waitpid(_cgi_child, &_status, 0); // Reap child process
+				close(_fd[0]); // close read end of pipe
+				throw 408;
+			}
+			int poll_result = poll(&pfd, 1, 100);
+			if (poll_result > 0){
+				if (pfd.revents & POLLIN)
+				{
+					ssize_t bytes_read = read(_fd[0], buffer, sizeof(buffer) - 1);
+					if (bytes_read > 0)
+					{
+						buffer[bytes_read] = '\0'; // Null-terminate the string
+						_output += buffer;
+					}
+					else if (bytes_read == 0)
+						break;
+					else if (bytes_read == -1)
+					{
+						kill(_cgi_child, SIGKILL); // Kill child process
+						waitpid(_cgi_child, &_status, 0); // verify child process
+						close(_fd[0]);
+						throw 500;
+					}
+				}
+			}
+			else if (poll_result == -1){
+				kill(_cgi_child, SIGKILL); // Kill child process
+				waitpid(_cgi_child, &_status, 0); // Reap child process
+				close(_fd[0]); // close read end of pipe
 				throw 500;
-			if (bytes_read == 0)
-				break;
-			_output.append(buffer, bytes_read);
-			if (bytes_read < 1024)
-				break;
-		}
-		if (-1 == close(_fd[0])) // close read end of pipe
-			throw 500;
+			}
 		}
 		waitpid(_cgi_child, &_status, 0);
 		if (WIFEXITED(_status) == 0 || WEXITSTATUS(_status) != 0)
 			throw 500;
+		close(_fd[0]);
+	}
 	return (0);
 }
 
