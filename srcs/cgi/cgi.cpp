@@ -7,6 +7,7 @@ int CGI::execute(void)
 
 	if (pipe(_fd) == -1) // create pipe
 		throw 500;
+	
 	if ((_cgi_child = fork()) == -1) // fork process
 		throw 500;
 	if (_cgi_child == 0) // child process
@@ -29,6 +30,7 @@ int CGI::execute(void)
 	if (close(_fd[1])) // close write end of pipe
 		throw 500;
 	waitpid(_cgi_child, NULL, 0);
+
 	while (1)
 	{
 		char buffer[1024];
@@ -69,7 +71,7 @@ void	CGI::init(void)
 		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
 		setenv("HTTP_COOKIE", _req.get_header("Cookie").c_str(), 1) |
-		setenv("SERVER_NAME", "webserv", 1) |
+		setenv("SERVER_NAME", _req.get_Host().c_str(), 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |
 		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1) |
 		setenv("SERVER_PORT", DEL::to_string(servers.at(_req.get_server_index()).getPort()).c_str(), 1) |
