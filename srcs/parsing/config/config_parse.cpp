@@ -295,6 +295,8 @@ void set_default_error_pages(Serv &server){
         server.getErrorPages()["409"] = "error_pages/413.html";
     if (server.getErrorPages().find("201") == server.getErrorPages().end())
         server.getErrorPages()["201"] = "error_pages/201.html";
+    if (server.getErrorPages().find("408") == server.getErrorPages().end())
+        server.getErrorPages()["408"] = "error_pages/408.html";
 }
 
 void add_default_location(Serv &server){
