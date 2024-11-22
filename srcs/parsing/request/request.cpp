@@ -247,7 +247,6 @@ void    Request::fill_request(std::vector<char> &buf){
                         throw 400;
                 }
                 if (_Method != "POST" || (_Transfer_Mechanism == "Fixed" && _Fixed_length == 0)){
-                    cout << "Server index: " << get_server_index_(get_Host(), _fd) << endl;
                     set_server_index(get_server_index_(get_Host(), _fd));
                     _request_state = HTTP_COMPLETE;
                 }
