@@ -101,7 +101,6 @@ int CGI::execute(void)
 
 void	CGI::init(void)
 {
-	cout << _req.get_method() << endl;
 	string file_path = get_CGI_script(_req.get_file_name(), _req.get_server_index(), 0);
 	_err_file_fd = open(ERROR_FILE, O_WRONLY | O_CREAT | O_APPEND, 0666); // open error file
 	if (_err_file_fd == -1)
@@ -120,7 +119,7 @@ void	CGI::init(void)
 		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
 		setenv("HTTP_COOKIE", _req.get_header("Cookie").c_str(), 1) |
-		setenv("SERVER_NAME", "webserv", 1) |
+		setenv("SERVER_NAME", _req.get_Host().c_str(), 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |
 		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1) |
 		setenv("SERVER_PORT", DEL::to_string(servers.at(_req.get_server_index()).getPort()).c_str(), 1) |

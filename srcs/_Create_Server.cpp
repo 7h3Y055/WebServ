@@ -115,26 +115,30 @@ void _Create_Servers()
 }
 
 
-int get_server_index_(string &host)
+int get_server_index_(string &host, int fd)
 {
     for (size_t i = 0; i < servers.size(); i++)
     {
-        for (size_t j = 0; j < servers[i].getServerName().size(); j++)
+        if (servers[i].getFd() == fd)
         {
-            size_t pos = servers[i].getServerName()[j].find(":");
-            size_t pos2 = host.find(":");
-            if (pos2 != string::npos)
+            for (size_t j = 0; j < servers[i].getServerName().size(); j++)
             {
-                if (host.substr(pos2 + 1) == _to_string(servers[i].getPort()) &&
-                    servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2))
-                    {
-                        return i;
-                    }
+                size_t pos = servers[i].getServerName()[j].find(":");
+                size_t pos2 = host.find(":");
+                if (pos2 != string::npos) // wen have a port
+                {
+                    if (host.substr(pos2 + 1) == _to_string(servers[i].getPort()) &&
+                        servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2))   
+                        {
+                            return i;
+                        }
+                }
+                else if (servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // wen have just a host
+                {
+                    return i;
+                }
             }
-            else if (servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2))
-            {
-                return i;
-            }
+            return i;
         }
     }
     return 0;
@@ -150,7 +154,6 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
         {
             std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
             if (it->second->get_req().get_body_path().size() != 0){
-                cout << "Remove: " << it->second->get_req().get_body_path() << endl;
                 remove(it->second->get_req().get_body_path().c_str());
             }
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
@@ -230,6 +233,7 @@ void _Run_Server()
                         throw std::runtime_error("epoll_ctl failed");
                     }
                     clients[client_fd] = client;
+                    clients[client_fd]->req._fd = events[i].data.fd;
                     std::cout << "New connection from " << client->get_ip() << ":" << client->get_port() << std::endl;
                 }
             }
@@ -242,7 +246,6 @@ void _Run_Server()
                     {
                         std::cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                         if (clients[client_fd]->get_req().get_body_path().size() != 0){
-                            cout << "Remove: " << clients[client_fd]->get_req().get_body_path() << endl;  
                             remove(clients[client_fd]->get_req().get_body_path().c_str());
                         }
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
@@ -260,7 +263,6 @@ void _Run_Server()
                         {
                             std::cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
                             if (clients[client_fd]->get_req().get_body_path().size() != 0){
-                                cout << "Remove: " << clients[client_fd]->get_req().get_body_path() << endl;  
                                 remove(clients[client_fd]->get_req().get_body_path().c_str());
                             }
                             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
@@ -273,6 +275,7 @@ void _Run_Server()
                         clients[client_fd]->set_read_pos(clients[client_fd]->get_read_pos() + ret);
                         char *buffer = clients[client_fd]->get_buffer();
                         std::vector<char> buf(buffer, buffer + ret);
+
                         clients[client_fd]->req.fill_request(buf);
 
                     }
@@ -317,7 +320,7 @@ void _Run_Server()
                             }
                             else
                             {
-                                std::memset(buffer, 0, SEND_BUFFER_SIZE); // WARRING !!!!!!!!!!
+                                std::memset(buffer, 0, SEND_BUFFER_SIZE);
                                 clients[client_fd]->cgi_file_stream.seekg(clients[client_fd]->cgi_file_offset);
                                 clients[client_fd]->cgi_file_stream.read(buffer, SEND_BUFFER_SIZE);
                                 size_t bytes_read = clients[client_fd]->cgi_file_stream.gcount();

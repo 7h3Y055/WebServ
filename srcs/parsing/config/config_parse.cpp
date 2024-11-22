@@ -292,7 +292,7 @@ void set_default_error_pages(Serv &server){
     if (server.getErrorPages().find("413") == server.getErrorPages().end())
         server.getErrorPages()["413"] = "error_pages/413.html";
     if (server.getErrorPages().find("409") == server.getErrorPages().end())
-        server.getErrorPages()["409"] = "error_pages/413.html";
+        server.getErrorPages()["409"] = "error_pages/409.html";
     if (server.getErrorPages().find("201") == server.getErrorPages().end())
         server.getErrorPages()["201"] = "error_pages/201.html";
     if (server.getErrorPages().find("408") == server.getErrorPages().end())
@@ -390,13 +390,28 @@ void parse_config(int ac, char **av)
     }
     for (size_t i = 0; i < servers.size(); ++i) {
         for (size_t j = i + 1; j < servers.size(); ++j) {
+
+
             for (size_t k = 0; k < servers[i].getServerName().size(); ++k) {
                 for (size_t l = 0; l < servers[j].getServerName().size(); ++l) {
-                    if (servers[i].getServerName()[k] == servers[j].getServerName()[l])
-                        throw std::runtime_error("Error: duplicate server name");
+
+
+                    if (servers[i].getServerName()[k] == servers[j].getServerName()[l] && servers[i].getPort() == servers[j].getPort() && servers[i].getHost() == servers[j].getHost()) {
+
+                        throw std::runtime_error("Error: duplicate servers");
+                    }
+
+
+
+
                 }
             }
+
+
+
+
         }
+
     }
     if (servers.size() == 0)
         throw std::runtime_error("Error: no server");

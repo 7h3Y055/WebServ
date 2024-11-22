@@ -33,6 +33,7 @@ class Request
         std::string _Body_path;
         int server_index;
     public:
+        int _fd;
         bool chunked_state;
         unsigned long long chunked_length;
         void fill_request(std::vector<char> &buf);

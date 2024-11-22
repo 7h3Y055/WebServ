@@ -162,6 +162,8 @@ bool is_CGI(std::string file_name, size_t index, size_t start_pos){
 }
 
 string get_CGI_script(std::string file_name, size_t index, size_t start_pos){
+    if (file_name.find(".") == string::npos)
+        return file_name;
     location loc = get_location(file_name, servers[index]);
 
     size_t i = start_pos;
@@ -245,11 +247,11 @@ void    Request::fill_request(std::vector<char> &buf){
                         throw 400;
                 }
                 if (_Method != "POST" || (_Transfer_Mechanism == "Fixed" && _Fixed_length == 0)){
-                    set_server_index(get_server_index_(get_Host()));
+                    set_server_index(get_server_index_(get_Host(), _fd));
                     _request_state = HTTP_COMPLETE;
                 }
                 else{
-                    set_server_index(get_server_index_(get_Host()));
+                    set_server_index(get_server_index_(get_Host(), _fd));
                     _request_state = HTTP_BODY;
                 }
                 continue ;
@@ -359,6 +361,8 @@ Response *Request::execute_request()
     }
     else if (_Method == "DELETE"){
         std::cout << "[DELETE]" << std::endl;
+        delete_Response(this);
+        throw 204;
     }
 
     return createResponse(404, this);
