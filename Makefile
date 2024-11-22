@@ -2,13 +2,13 @@ NAME = webserv
 
 CXX = c++
 
-CXXFLAGS = -std=c++98 -g3 -g #-Wall -Wextra -Werror
+CXXFLAGS = -std=c++98 -g3 -g -fsanitize=address #-Wall -Wextra -Werror
 
 SRC  = srcs/main.cpp srcs/parsing/request/request.cpp \
 	srcs/_Create_Server.cpp srcs/methods/_Post/post.cpp \
 	srcs/response/response.cpp srcs/response/error_response.cpp srcs/parsing/config/config_parse.cpp\
 	srcs/methods/_Post/mime_types.cpp srcs/methods/_Get/_Get.cpp srcs/methods/_Delete/utils.cpp\
-	srcs/cgi/cgi.cpp
+	srcs/cgi/cgi.cpp /home/yoss/last_main/srcs/methods/_Delete/delete_Response.cpp
 
 INC = -Iincludes
 
@@ -19,7 +19,7 @@ OBJ = $(SRC:.cpp=.o)
 all: $(NAME)
 	# @clear
 	#  @./$(NAME) | cat -e
-	rm -f $(OBJ)
+	# rm -f $(OBJ)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)

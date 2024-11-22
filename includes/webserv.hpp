@@ -63,4 +63,4 @@ location get_location(std::string file_name, Serv &config);
 string get_CGI_script(std::string file_name, size_t index, size_t start_pos);
 bool is_CGI(std::string file_name, size_t index, size_t start_pos);
 Response *create_redirection(location &loc, Request &req);
-int get_server_index_(string &host);
+int get_server_index_(string &host, int fd);
