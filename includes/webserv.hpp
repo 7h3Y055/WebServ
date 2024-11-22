@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <arpa/inet.h>
 #include <limits>
+#include <ctime>
 
 #include "request.hpp"
 #include "Response.hpp"

@@ -7,46 +7,95 @@ int CGI::execute(void)
 
 	if (pipe(_fd) == -1) // create pipe
 		throw 500;
-	
 	if ((_cgi_child = fork()) == -1) // fork process
 		throw 500;
+	cout << "_body_path " << _body_path << endl;
 	if (_cgi_child == 0) // child process
 	{
-		int fd = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666); // open body file	
-		if (fd == -1)
-			throw 500;
-		if (dup2(fd, STDIN_FILENO) == -1)
-			throw 500;
-		if (dup2(_fd[1], STDOUT_FILENO) == -1) // redirect stdout to pipe
-			throw 500;
-		if (dup2(_err_file_fd, STDERR_FILENO) == -1) // redirect stderr to error file
-			throw 500;
-		if (close(_fd[1]) || close(_fd[0])) // close write end and read end of pipe
-			throw 500;
+		int	inp_file;
+		int	err_file;
+		if ((inp_file = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666)) == -1){ // open input file
+			exit(EXIT_FAILURE);
+		}
+		if ((err_file = open(ERROR_FILE, O_WRONLY | O_CREAT | O_APPEND, 0666)) == -1){ // open error file
+			close(inp_file);
+			exit(EXIT_FAILURE);
+		}
+		if (-1 == dup2(inp_file, STDIN_FILENO) ){
+			close(inp_file);
+			close(err_file);
+			exit(EXIT_FAILURE);
+		}
+		if (dup2(_fd[1], STDOUT_FILENO) == -1 || -1 == dup2(err_file, STDERR_FILENO)){ // redirect stdout and stderr to pipe
+			close(inp_file);
+			close(err_file);
+			exit(EXIT_FAILURE);
+		}
+		if (close(_fd[1]) || close(_fd[0]) || close(err_file) == EOF || EOF == close(inp_file)){ // close pipe
+			exit(EXIT_FAILURE);
+		}
 		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
 		execve(_cgi_path.c_str(), (char **)argv, environ);
-		throw 500;
+		exit(EXIT_FAILURE);
 	}
-	if (close(_fd[1])) // close write end of pipe
-		throw 500;
-	waitpid(_cgi_child, NULL, 0);
-
-	while (1)
+	else
 	{
-		char buffer[1024];
-		int bytes_read = read(_fd[0], buffer, 1024);
-		if (bytes_read == -1)
+		if (close(_fd[1]) == -1) // close write end of pipe
 			throw 500;
-		if (bytes_read == 0)
-			break;
-		_output.append(buffer, bytes_read);
-		if (bytes_read < 1024)
-			break;
+		int flag = fcntl(_fd[0], F_GETFL); // get file status flags
+		if (-1 == flag || fcntl(_fd[0], F_SETFL, flag | O_NONBLOCK) == -1) // set file status flags
+			throw 500;
+		int epoll_fd = epoll_create(1); // create epoll instance
+		if (epoll_fd == -1)
+			throw 500;
+		struct epoll_event event;
+		event.events = EPOLLIN; // monitor for incoming data
+		event.data.fd = _fd[0];
+		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _fd[0], &event) == -1) // add the pipe's read end to the epoll instance
+			throw 500;
+		struct epoll_event events[1]; // array to hold triggered events
+		char buffer[1024];
+		std::time_t start_time = std::time(0);
+		while (1)
+		{
+			int r_status = waitpid(_cgi_child, &_status, WNOHANG);
+			if (r_status == -1)
+				throw 500;
+			if (r_status == _cgi_child)
+				break;
+			std::time_t elapsed = std::time(0) - start_time;
+			if (elapsed >= TIMEOUT){
+				kill(_cgi_child, SIGKILL); // Kill child process
+				waitpid(_cgi_child, &_status, 0); // Reap child process
+				close(_fd[0]); // close read end of pipe
+				throw 408;
+			}
+			std::time_t remaining_time = TIMEOUT - elapsed;
+			int event_count = epoll_wait(epoll_fd, events, 1, remaining_time * 1000);
+			if (event_count == -1)
+			{
+				kill(_cgi_child, SIGKILL); // Kill child process
+				waitpid(_cgi_child, &_status, 0); // Reap child process
+				close(_fd[0]); // close read end of pipe
+				throw 500;
+			}
+			else if (event_count == 0)
+				continue;
+			if (events[0].events & EPOLLIN) // handle readable pipe
+			{
+				ssize_t bytes_read = read(_fd[0], buffer, sizeof(buffer) - 1);
+				if (bytes_read > 0)
+				{
+					buffer[bytes_read] = '\0'; // Null-terminate the string
+					_output += buffer;
+				}
+				else if (bytes_read == 0)
+					break;
+			}
+		}
+		if (close(_fd[0]) == -1) // close read end of pipe
+			throw 500;
 	}
-	if (-1 == close(_fd[0])) // close read end of pipe
-		throw 500;
-	if (-1 == close(_err_file_fd)) // close error file
-		throw 500;
 	return (0);
 }
 
@@ -71,7 +120,7 @@ void	CGI::init(void)
 		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
 		setenv("HTTP_COOKIE", _req.get_header("Cookie").c_str(), 1) |
-		setenv("SERVER_NAME", _req.get_Host().c_str(), 1) |
+		setenv("SERVER_NAME", "webserv", 1) |
 		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1) |
 		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1) |
 		setenv("SERVER_PORT", DEL::to_string(servers.at(_req.get_server_index()).getPort()).c_str(), 1) |

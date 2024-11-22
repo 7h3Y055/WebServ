@@ -15,6 +15,9 @@ std::string get_error_message(int code){
     case 401:
         return "Unauthorized";
         break;
+    case 408:
+        return "Request Timeout";
+        break;
     case 403:
         return "Forbidden";
         break;
