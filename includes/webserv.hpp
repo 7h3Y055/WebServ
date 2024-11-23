@@ -37,9 +37,9 @@
 #include "Response.hpp"
 #include "config.hpp"
 #include "_Get.hpp"
+#include "cgi.hpp"
 #include "client.hpp"
 #include "delete.hpp"
-#include "cgi.hpp"
 
 #define SEND_BUFFER_SIZE 2048
 #define TIMEOUT 5
