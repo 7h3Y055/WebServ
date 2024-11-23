@@ -2,6 +2,15 @@
 #include "webserv.hpp"
 
 
+std::string trim_(std::string str)
+{
+    size_t first = str.find_first_not_of("\t\n\v\f\r ");
+    if (std::string::npos == first)
+        return str;
+    size_t last = str.find_last_not_of("\t\n\v\f\r ");
+    str = str.substr(first, (last - first + 1));
+    return str;
+}
 
 std::string get_extention(Request &req){
 

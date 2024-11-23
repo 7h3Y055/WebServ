@@ -1,16 +1,7 @@
 #include "webserv.hpp"
 
-std::string trim_(std::string str)
-{
-    size_t first = str.find_first_not_of("\t\n\v\f\r ");
-    if (std::string::npos == first)
-        return str;
-    size_t last = str.find_last_not_of("\t\n\v\f\r ");
-    str = str.substr(first, (last - first + 1));
-    return str;
-}
 
-std::string &trim(std::string &str)
+std::string trim(std::string &str)
 {
     size_t first = str.find_first_not_of("\t\n\v\f\r ");
     if (std::string::npos == first)
@@ -346,8 +337,8 @@ void check_paths(Serv &server){
             throw std::runtime_error("Error: invalid error page '" + it->second + "'");
     }
     for (size_t i = 0; i < server.getLocations().size(); ++i) {
-        if (server.getLocations()[i].getUploadPath() != "" && !pathExists(server.getLocations()[i].getRoot() + "/" + server.getLocations()[i].getUploadPath()))
-            throw std::runtime_error("Error: invalid upload path '" + server.getLocations()[i].getRoot() + "/" + server.getLocations()[i].getUploadPath() + "'");
+        if (trim(server.getLocations()[i].getUploadPath()) != "" && !pathExists(server.getLocations()[i].getRoot() + "/" + trim(server.getLocations()[i].getUploadPath())))
+            throw std::runtime_error("Error: invalid upload path '" + server.getLocations()[i].getRoot() + "/" + trim(server.getLocations()[i].getUploadPath()) + "'");
         for (map<string, string>::iterator it = server.getLocations()[i].getCgi().begin(); it != server.getLocations()[i].getCgi().end(); ++it) {
             if (!pathExecutable(it->second))
                 throw std::runtime_error("Error: invalid cgi '" + it->second + "'");

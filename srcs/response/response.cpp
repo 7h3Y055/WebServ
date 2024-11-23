@@ -33,10 +33,6 @@ std::vector<char> Response::get_response(){
     std::string str;
     ss << _status_code;
     
-    
-    for (; _status_message.size() < 3;) // add Zeros to make code 3 characters
-        _status_message = '0' + _status_message;
-    
 
     // add status line
     push_str(response, "HTTP/1.1 " + ss.str() + " " + _status_message + "\r\n");

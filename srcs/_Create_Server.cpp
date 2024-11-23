@@ -146,6 +146,8 @@ int get_server_index_(string &host, int fd)
 
 void    Client_desconnected(std::map<int, Client *> &clients, int &epoll_fd, int client_fd)
 {
+    if (clients[client_fd] == NULL)
+        return;
     cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
     if (clients[client_fd]->get_req().get_body_path().size() != 0){
         remove(clients[client_fd]->get_req().get_body_path().c_str());
@@ -381,6 +383,7 @@ void _Run_Server()
                                     {
                                         std::cerr << "Send failed" << std::endl;
                                     }
+                                    delete res;
                                     Client_desconnected(clients, epoll_fd, client_fd);
                                     continue;
                                 }
@@ -415,6 +418,7 @@ void _Run_Server()
                                 {
                                     std::cerr << "Send failed" << std::endl;
                                 }
+                                delete res;
                                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                                 delete clients[client_fd];
                                 clients.erase(client_fd);
