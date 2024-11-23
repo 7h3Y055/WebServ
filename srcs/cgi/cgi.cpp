@@ -1,100 +1,62 @@
 #include "webserv.hpp"
 extern char **environ;
 
-int CGI::execute(void)
+int CGI::execute(Client *cli)
 {
-	init();
+	if (cli->already_visite_cgi == false)
+	{
+		cli->cig_start_time = time(NULL);
+		cli->already_visite_cgi = true;
+		init();
 
-	if (pipe(_fd) == -1) // create pipe
-		throw 500;
-	if ((_cgi_child = fork()) == -1) // fork process
-		throw 500;
-	cout << "_body_path " << _body_path << endl;
-	if (_cgi_child == 0) // child process
-	{
-		int	inp_file;
-		int	err_file;
-		if ((inp_file = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666)) == -1){ // open input file
-			exit(EXIT_FAILURE);
-		}
-		if ((err_file = open(ERROR_FILE, O_WRONLY | O_CREAT | O_APPEND, 0666)) == -1){ // open error file
-			close(inp_file);
-			exit(EXIT_FAILURE);
-		}
-		if (-1 == dup2(inp_file, STDIN_FILENO) ){
-			close(inp_file);
-			close(err_file);
-			exit(EXIT_FAILURE);
-		}
-		if (dup2(_fd[1], STDOUT_FILENO) == -1 || -1 == dup2(err_file, STDERR_FILENO)){ // redirect stdout and stderr to pipe
-			close(inp_file);
-			close(err_file);
-			exit(EXIT_FAILURE);
-		}
-		if (close(_fd[1]) || close(_fd[0]) || close(err_file) == EOF || EOF == close(inp_file)){ // close pipe
-			exit(EXIT_FAILURE);
-		}
-		const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
-		execve(_cgi_path.c_str(), (char **)argv, environ);
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		if (close(_fd[1]) == -1) // close write end of pipe
+		if ((_cgi_child = fork()) == -1) // fork process
 			throw 500;
-		int flag = fcntl(_fd[0], F_GETFL); // get file status flags
-		if (-1 == flag || fcntl(_fd[0], F_SETFL, flag | O_NONBLOCK) == -1) // set file status flags
-			throw 500;
-		int epoll_fd = epoll_create(1); // create epoll instance
-		if (epoll_fd == -1)
-			throw 500;
-		struct epoll_event event;
-		event.events = EPOLLIN; // monitor for incoming data
-		event.data.fd = _fd[0];
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _fd[0], &event) == -1) // add the pipe's read end to the epoll instance
-			throw 500;
-		struct epoll_event events[1]; // array to hold triggered events
-		char buffer[1024];
-		std::time_t start_time = std::time(0);
-		while (1)
+		if (_cgi_child == 0) // child process
 		{
-			int r_status = waitpid(_cgi_child, &_status, WNOHANG);
-			if (r_status == -1)
-				throw 500;
-			if (r_status == _cgi_child)
-				break;
-			std::time_t elapsed = std::time(0) - start_time;
-			if (elapsed >= TIMEOUT){
-				kill(_cgi_child, SIGKILL); // Kill child process
-				waitpid(_cgi_child, &_status, 0); // Reap child process
-				close(_fd[0]); // close read end of pipe
-				throw 408;
+			if ((_in_file_fd = open(_body_path.c_str(), O_RDONLY | O_CREAT, 0666)) == -1){ // open input file
+				exit(EXIT_FAILURE);
 			}
-			std::time_t remaining_time = TIMEOUT - elapsed;
-			int event_count = epoll_wait(epoll_fd, events, 1, remaining_time * 1000);
-			if (event_count == -1)
-			{
-				kill(_cgi_child, SIGKILL); // Kill child process
-				waitpid(_cgi_child, &_status, 0); // Reap child process
-				close(_fd[0]); // close read end of pipe
-				throw 500;
+			if ((_err_file_fd = open(ERROR_FILE, O_WRONLY | O_CREAT | O_APPEND, 0666)) == -1){ // open error file
+				close(_in_file_fd);
+				exit(EXIT_FAILURE);
 			}
-			else if (event_count == 0)
-				continue;
-			if (events[0].events & EPOLLIN) // handle readable pipe
-			{
-				ssize_t bytes_read = read(_fd[0], buffer, sizeof(buffer) - 1);
-				if (bytes_read > 0)
-				{
-					buffer[bytes_read] = '\0'; // Null-terminate the string
-					_output += buffer;
-				}
-				else if (bytes_read == 0)
-					break;
+			if ((_out_file_fd = open(_ouput_file_path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0666)) == -1){ // open output file
+				close(_in_file_fd);
+				close(_err_file_fd);
+				exit(EXIT_FAILURE);
 			}
+			if (-1 == dup2(_in_file_fd, STDIN_FILENO) ){
+				close(_in_file_fd);
+				close(_err_file_fd);
+				exit(EXIT_FAILURE);
+			}
+			if (dup2(_out_file_fd, STDOUT_FILENO) == -1 || -1 == dup2(_err_file_fd, STDERR_FILENO)){ // redirect stdout and stderr to pipe
+				close(_in_file_fd);
+				close(_err_file_fd);
+				exit(EXIT_FAILURE);
+			}
+			if (close(_out_file_fd) || close(_err_file_fd) == EOF || EOF == close(_in_file_fd)){ // close pipe
+				exit(EXIT_FAILURE);
+			}
+			const char *argv[] = {_cgi_path.c_str(), _path.c_str(), NULL};
+			execve(_cgi_path.c_str(), (char **)argv, environ);
+			exit(EXIT_FAILURE);
 		}
-		if (close(_fd[0]) == -1) // close read end of pipe
+	}
+	{
+		int r_status = waitpid(_cgi_child, &_status, WNOHANG);
+		if (r_status == -1)
 			throw 500;
+		if (r_status == _cgi_child){
+			return (0);
+		}
+		std::time_t elapsed = std::time(0) - cli->cig_start_time;
+		if (elapsed >= TIMEOUT){
+			if (kill(_cgi_child, SIGKILL) == -1) // Kill child process
+				throw 500;
+			throw 408;
+		}
+		return (STILL_RUNNING);
 	}
 	return (0);
 }
@@ -115,6 +77,7 @@ void	CGI::init(void)
 	string _query_string = _req.get_URI().substr((_req.get_URI().find('?' ) == string::npos ? _req.get_URI().size() : _req.get_URI().find('?')));
 	if (!_query_string.empty())
 		_query_string = _query_string.substr(1);
+	_ouput_file_path = generate_random_name();
 	(
 		setenv("REDIRECT_STATUS", "", 1) |
 		setenv("SERVER_SOFTWARE", "Webserv 42 (1337)", 1) |
@@ -135,6 +98,13 @@ void	CGI::init(void)
 
 string		CGI::get_response(void)
 {
+	ifstream file_in(_ouput_file_path.c_str());
+	if (!file_in.is_open())
+		throw 500;
+	string output((istreambuf_iterator<char>(file_in)), istreambuf_iterator<char>());
+	file_in.close();
+	unlink(_ouput_file_path.c_str());
+	_output = output;
 	string	output_file_path = generate_random_name();
 	unsigned long long	content_length = SIZE_MAX;
 	string		status_code;
