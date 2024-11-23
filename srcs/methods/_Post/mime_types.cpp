@@ -46,7 +46,8 @@ std::string get_extention(Request &req){
 
     if (req.get_headers().find("Content-Type")->first.size() != 12) // 12 is length of "Content-Type"
         throw 400;
-    std::string ext = extentions[req.get_header("Content-Type")];
+    string mime = trim_(req.get_header("Content-Type").substr(0, req.get_header("Content-Type").find(";")));
+    std::string ext = extentions[mime];
     if (!ext.size())
         throw 415;
     return ext;

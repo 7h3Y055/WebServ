@@ -42,7 +42,7 @@
 #include "delete.hpp"
 
 #define SEND_BUFFER_SIZE 2048
-#define TIMEOUT 5
+#define TIMEOUT 2
 #define ERROR_FILE "logs/error.log"
 
 
@@ -65,3 +65,5 @@ string get_CGI_script(std::string file_name, size_t index, size_t start_pos);
 bool is_CGI(std::string file_name, size_t index, size_t start_pos);
 Response *create_redirection(location &loc, Request &req);
 int get_server_index_(string &host, int fd);
+std::string trim_(std::string str);
+std::string &trim(std::string& str);

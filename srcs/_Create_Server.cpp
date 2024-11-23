@@ -144,6 +144,23 @@ int get_server_index_(string &host, int fd)
     return 0;
 }
 
+void    Client_desconnected(std::map<int, Client *> &clients, int &epoll_fd, int client_fd)
+{
+    cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
+    if (clients[client_fd]->get_req().get_body_path().size() != 0){
+        remove(clients[client_fd]->get_req().get_body_path().c_str());
+    }
+    if (clients[client_fd]->cgi){ // kill child process
+        kill(clients[client_fd]->cgi->get_cgi_child(), SIGKILL);
+        waitpid(clients[client_fd]->cgi->get_cgi_child(), NULL, 0);
+        cout << "Kill child process: " << clients[client_fd]->cgi->get_cgi_child() << endl;
+    }
+    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+    delete clients[client_fd];
+    clients.erase(client_fd);
+    close(client_fd);
+}
+
 void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
 {
     time_t current_time = time(NULL);
@@ -198,8 +215,10 @@ void _Run_Server()
     while (true)
     {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 1000);
-        if (num_events == -1)
-            throw std::runtime_error("epoll_wait failed");
+        if (num_events == -1){
+            cerr << "epoll_wait failed" << endl;
+            continue;
+        }
         _Check_for_timeout(clients, epoll_fd);
         for (int i = 0; i < num_events; i++)
         {
@@ -219,8 +238,8 @@ void _Run_Server()
                     // if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1)
                     //     throw std::runtime_error("fcntl F_SETFL failed");
 
-                    if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1)
-                        throw std::runtime_error("fcntl failed");
+                    // if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1)
+                    //     throw std::runtime_error("fcntl failed");
                     Client *client = new Client(client_fd, addr, -1);
                     client->header_flag = false;
                     client->cgi_header_flag = false;
@@ -230,7 +249,8 @@ void _Run_Server()
                     {
                         delete client;
                         close(client_fd);
-                        throw std::runtime_error("epoll_ctl failed");
+                        cerr << "epoll_ctl failed" << endl;
+                        continue;
                     }
                     clients[client_fd] = client;
                     clients[client_fd]->req._fd = events[i].data.fd;
@@ -244,31 +264,15 @@ void _Run_Server()
                 {
                     if (events[i].events & (EPOLLRDHUP | EPOLLHUP))
                     {
-                        std::cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                        if (clients[client_fd]->get_req().get_body_path().size() != 0){
-                            remove(clients[client_fd]->get_req().get_body_path().c_str());
-                        }
-                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                        delete clients[client_fd];
-                        clients.erase(client_fd);
-                        close(client_fd);
+                        Client_desconnected(clients, epoll_fd, client_fd);
                         continue;
                     }
                     if (events[i].events & EPOLLIN)
                     {
                         int ret = recv(client_fd, clients[client_fd]->get_buffer(), BUFFER_SIZE, 0);
-                        if (ret == -1)
-                            throw std::runtime_error("recv failed");
-                        if (ret == 0)
+                        if (ret <= 0)
                         {
-                            std::cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                            if (clients[client_fd]->get_req().get_body_path().size() != 0){
-                                remove(clients[client_fd]->get_req().get_body_path().c_str());
-                            }
-                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                            delete clients[client_fd];
-                            clients.erase(client_fd);
-                            close(client_fd);
+                            Client_desconnected(clients, epoll_fd, client_fd);
                             continue;
                         }
                         clients[client_fd]->update_last_read();
@@ -293,11 +297,7 @@ void _Run_Server()
                             {
                                 std::cerr << "Send failed" << std::endl;
                             }
-                            std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                            delete clients[client_fd];
-                            clients.erase(client_fd);
-                            close(client_fd);
+                            Client_desconnected(clients, epoll_fd, client_fd);
                             continue;
                         }
 
@@ -315,7 +315,7 @@ void _Run_Server()
                                 clients[client_fd]->path_file = clients[client_fd]->cgi->get_response();
                                 clients[client_fd]->cgi_file_stream.open(clients[client_fd]->path_file.c_str(), std::ios::binary);
                                 if (!clients[client_fd]->cgi_file_stream.is_open())
-                                    throw 403;
+                                    throw 500;
                                 clients[client_fd]->cgi_file_offset = 0;
                                 clients[client_fd]->cgi_header_flag = true;
                                 clients[client_fd]->sending_file = true;
@@ -328,11 +328,7 @@ void _Run_Server()
                                 size_t bytes_read = clients[client_fd]->cgi_file_stream.gcount();
                                 if (bytes_read == 0)
                                 {
-                                    std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                                    delete clients[client_fd];
-                                    clients.erase(client_fd);
-                                    close(client_fd);
+                                    Client_desconnected(clients, epoll_fd, client_fd);
                                 }
                                 else
                                 {
@@ -385,11 +381,7 @@ void _Run_Server()
                                     {
                                         std::cerr << "Send failed" << std::endl;
                                     }
-                                    std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                                    delete clients[client_fd];
-                                    clients.erase(client_fd);
-                                    close(client_fd);
+                                    Client_desconnected(clients, epoll_fd, client_fd);
                                     continue;
                                 }
                                 if (!loc.getDirectoryListing())
@@ -467,11 +459,8 @@ void _Run_Server()
                                     // std::cout << "buffer: " << buffer << std::endl;
                                     if (bytes_read == 0)
                                     {
-                                        std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                                        delete clients[client_fd];
-                                        clients.erase(client_fd);
-                                        close(client_fd);
+                                        Client_desconnected(clients, epoll_fd, client_fd);
+
                                     }
                                     else
                                     {
@@ -508,14 +497,10 @@ void _Run_Server()
                                 continue;
                             }
                             if (clients[client_fd]->get_req().get_body_path().size() != 0){
-                                cout << "Remove: " << clients[client_fd]->get_req().get_body_path() << endl;  
                                 remove(clients[client_fd]->get_req().get_body_path().c_str());
                             }
-                            std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                            delete clients[client_fd];
-                            clients.erase(client_fd);
-                            close(client_fd);
+                            Client_desconnected(clients, epoll_fd, client_fd);
+
                         }
                     }
                 }
@@ -528,11 +513,9 @@ void _Run_Server()
                     {
                         std::cerr << "Send failed" << std::endl;
                     }
-                    std::cout << "Client Disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << std::endl;
-                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                    delete clients[client_fd];
-                    clients.erase(client_fd);
-                    close(client_fd);
+                    delete res;
+                    Client_desconnected(clients, epoll_fd, client_fd);
+
                 }
             }
         }

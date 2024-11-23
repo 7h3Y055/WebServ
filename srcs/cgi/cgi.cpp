@@ -42,6 +42,7 @@ int CGI::execute(Client *cli)
 			execve(_cgi_path.c_str(), (char **)argv, environ);
 			exit(EXIT_FAILURE);
 		}
+		close(_err_file_fd);
 	}
 	{
 		int r_status = waitpid(_cgi_child, &_status, WNOHANG);
@@ -54,6 +55,7 @@ int CGI::execute(Client *cli)
 		if (elapsed >= TIMEOUT){
 			if (kill(_cgi_child, SIGKILL) == -1) // Kill child process
 				throw 500;
+			waitpid(_cgi_child, NULL, WNOHANG);
 			throw 408;
 		}
 		return (STILL_RUNNING);

@@ -28,6 +28,7 @@ class CGI
 	public:
 		void		init(void);
 		int			execute(Client *cli);
+		pid_t		get_cgi_child(void){ return _cgi_child; };
 		string		get_response(void);
 		CGI(Request &req, location &loc) 
 		: _req(req) , _loc(loc) {};
