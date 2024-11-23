@@ -13,7 +13,7 @@ class Response
         std::string body_file_path;
     public:
 
-        std::vector<char> &get_response();
+        std::vector<char> get_response();
         void set_status_code(int status_code);
         void set_status_message(std::string status_message);
         void set_header(std::string key, std::string value);
