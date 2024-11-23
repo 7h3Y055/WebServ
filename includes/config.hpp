@@ -56,7 +56,7 @@ class Serv
         int &getPort() { return port; }
         std::string &getHost() { return host; }
         std::vector<std::string> &getServerName() { return server_name; }
-        void setRoot(std::string root) { root = root; }
+        void setRoot(std::string r) { root = r; }
         std::string &getRoot() { return root; }
         long long getClientMaxBodySize() { return static_cast<long long>(client_max_body_size); }
         std::vector<location> &getLocations() { return locations; }

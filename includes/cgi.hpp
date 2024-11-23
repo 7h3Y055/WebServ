@@ -2,34 +2,32 @@
 #define CGI_HPP
 
 
+#define STILL_RUNNING -1
 #include <string>
 using namespace std;
 
 
-int	run_cgi(Request &req);
-
-
+class Client;
 class CGI
 {
 	private:
 		string		_path;
-		location&	_loc;
 		Request&	_req;
+		location&	_loc;
 		string		_filename;
 		string		_cgi_path;
 		string		_body_path;
-		int			_fd[2];
+		string		_ouput_file_path;
 		size_t		_content_length;
 		int			_status;
 		pid_t		_cgi_child;
-		int			_stdout_copy;
-		int			_stderr_copy;
-		int			_stdin_copy;
 		string		_output;
+		int			_in_file_fd;
+		int			_out_file_fd;
 		int			_err_file_fd;
 	public:
 		void		init(void);
-		int			execute(void);
+		int			execute(Client *cli);
 		string		get_response(void);
 		CGI(Request &req, location &loc) 
 		: _req(req) , _loc(loc) {};

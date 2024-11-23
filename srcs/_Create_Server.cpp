@@ -307,10 +307,12 @@ void _Run_Server()
                             char buffer[SEND_BUFFER_SIZE];
                             if (clients[client_fd]->cgi_header_flag == false)
                             {
-                                CGI cgi(clients[client_fd]->req, loc);
-                                cgi.execute();
-                                
-                                clients[client_fd]->path_file = cgi.get_response();
+                                if (clients[client_fd]->already_visite_cgi == false){
+                                    clients[client_fd]->cgi = new CGI(clients[client_fd]->req, loc);
+                                }
+                                if (clients[client_fd]->cgi->execute(clients.at(client_fd)) == STILL_RUNNING)
+                                    continue;
+                                clients[client_fd]->path_file = clients[client_fd]->cgi->get_response();
                                 clients[client_fd]->cgi_file_stream.open(clients[client_fd]->path_file.c_str(), std::ios::binary);
                                 if (!clients[client_fd]->cgi_file_stream.is_open())
                                     throw 403;

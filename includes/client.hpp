@@ -2,9 +2,12 @@
 
 #include "webserv.hpp"
 
+
 #define BUFFER_SIZE 2048
 #define MAX_EVENTS 10
 
+
+class CGI;
 class Client
 {
     private:
@@ -19,14 +22,21 @@ class Client
         size_t _bytes_sent;
 
         RequestState _state;
-
         int server_index;
         int server_fd;
         
         time_t _last_read;
     public:
+        CGI *cgi;
+        bool already_visite_cgi;
+        bool cgi_done;
+        time_t cig_start_time;
         Client(int fd, struct sockaddr_in address, int index)
         {
+            cgi = NULL;
+            already_visite_cgi = false;
+            cgi_done = false;
+            cig_start_time = 0;
             _fd = fd;
             _address = address;
             _ip = inet_ntoa(address.sin_addr);
@@ -40,6 +50,8 @@ class Client
             req.set_server_index(index);
         }
         ~Client() {
+            if (cgi)
+                delete cgi;
             close(_fd);
         }
 
