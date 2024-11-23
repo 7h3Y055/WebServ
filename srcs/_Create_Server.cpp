@@ -97,11 +97,6 @@ void _Create_Servers()
                 close(fd);
                 throw std::runtime_error("listen failed");
             }
-            if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-            {
-                close(fd);
-                throw std::runtime_error("fcntl failed");
-            }
             host_port_to_fd[host_port] = fd;
             servers[i].setFd(fd);
             sockets_servs[fd].push_back(servers[i]);
@@ -148,7 +143,8 @@ void    Client_desconnected(std::map<int, Client *> &clients, int &epoll_fd, int
 {
     if (clients[client_fd] == NULL)
         return;
-    cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
+    // cout << "Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
+    cout << "Client disconnected! fd: " << client_fd << " port: " << clients[client_fd]->get_port() << endl;
     if (clients[client_fd]->get_req().get_body_path().size() != 0){
         remove(clients[client_fd]->get_req().get_body_path().c_str());
     }
@@ -171,7 +167,8 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
     {
         if ( it->second && current_time - it->second->get_last_read() > TIMEOUT)
         {
-            std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
+            // std::cout << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
+            std::cout << "Client timed out! fd: " << it->first << " port: " << it->second->get_port() << std::endl;
             if (it->second->get_req().get_body_path().size() != 0){
                 remove(it->second->get_req().get_body_path().c_str());
             }
@@ -234,14 +231,6 @@ void _Run_Server()
                         std::cerr << "accept failed: " << strerror(errno) << std::endl;
                         continue;
                     }
-                    // int flags = fcntl(client_fd, F_GETFL, 0);
-                    // if (flags == -1)
-                    //     throw std::runtime_error("fcntl F_GETFL failed");
-                    // if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1)
-                    //     throw std::runtime_error("fcntl F_SETFL failed");
-
-                    // if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1)
-                    //     throw std::runtime_error("fcntl failed");
                     Client *client = new Client(client_fd, addr, -1);
                     client->header_flag = false;
                     client->cgi_header_flag = false;
@@ -256,7 +245,8 @@ void _Run_Server()
                     }
                     clients[client_fd] = client;
                     clients[client_fd]->req._fd = events[i].data.fd;
-                    std::cout << "New connection from " << client->get_ip() << ":" << client->get_port() << std::endl;
+                    // std::cout << "New connection from " << client->get_ip() << ":" << client->get_port() << std::endl;
+                    std::cout << "New connection from fd: " << client_fd << " port: " << client->get_port() << std::endl;
                 }
             }
             else
