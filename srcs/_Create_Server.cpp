@@ -109,9 +109,13 @@ void _Create_Servers()
     }
 }
 
+/*
+
 
 int get_server_index_(string &host, int fd)
 {
+
+    std::cout << "this is the server fd == " << fd << " host == " << host << std::endl;
     for (size_t i = 0; i < servers.size(); i++)
     {
         if (servers[i].getFd() == fd)
@@ -128,11 +132,64 @@ int get_server_index_(string &host, int fd)
                             return i;
                         }
                 }
-                else if (servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // wen have just a host
+                std::cout << "servers[i].getServerName()[j].substr(0, pos) == " << servers[i].getServerName()[j].substr(0, pos) << std::endl;
+                if (servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // wen have just a host
                 {
                     return i;
                 }
             }
+            std::cout << "this is the server index == " << i << "fd " << fd << std::endl;
+            return i;
+        }
+    }
+    return 0;
+}
+
+*/
+
+
+std::vector<int> get_servers_same_fd(std::vector<Serv> &servers, int fd)
+{
+    std::vector<int> indexes;
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        if (servers[i].getFd() == fd)
+        {
+            indexes.push_back(i);
+        }
+    }
+    return indexes;
+}
+
+
+int get_server_index_(string &host, int fd)
+{
+    std::vector<int> fds = get_servers_same_fd(servers, fd);
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        if (servers[i].getFd() == fd)
+        {
+            for (size_t k = 0; k < fds.size(); k++)
+            {
+                for (size_t j = 0; j < servers[fds[k]].getServerName().size(); j++)
+                {
+                    size_t pos = servers[fds[k]].getServerName()[j].find(":");
+                    size_t pos2 = host.find(":");
+                    if (pos2 != string::npos) // wen have a port
+                    {
+                        if (host.substr(pos2 + 1) == _to_string(servers[fds[k]].getPort()) &&
+                            servers[fds[k]].getServerName()[j].substr(0, pos) == host.substr(0, pos2))   
+                            {
+                                return fds[k];
+                            }
+                    }
+                    if (servers[fds[k]].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // wen have just a host
+                    {
+                        return fds[k];
+                    }
+                }
+            }
+            std::cout << "this is the server index == " << i << "fd " << fd << std::endl;
             return i;
         }
     }
