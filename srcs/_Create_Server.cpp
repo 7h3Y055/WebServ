@@ -209,8 +209,6 @@ void _Run_Server()
     }
 
     std::map<int, Client *> clients;
-
-    std::vector<int> clients_response;
     while (true)
     {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 1000);

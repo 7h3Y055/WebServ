@@ -4,7 +4,7 @@
 
 
 #define BUFFER_SIZE 2048
-#define MAX_EVENTS 10
+#define MAX_EVENTS 1024
 
 
 class CGI;
