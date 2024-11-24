@@ -255,7 +255,7 @@ void _Run_Server()
 
     for (size_t i = 0; i < servers.size(); i++)
     {
-        event.events = EPOLLIN;
+        event.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP;
         event.data.fd = servers[i].getFd();
         if(std::find(fds.begin(), fds.end(), servers[i].getFd()) == fds.end())
         {
