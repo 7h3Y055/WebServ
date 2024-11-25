@@ -268,7 +268,6 @@ void    Request::fill_request(std::vector<char> &buf){
             ofstream file;
             if (_Body_path.size() == 0){
                 _Body_path =  generate_random_name();
-                cout << "Create: " << _Body_path << endl;
             }
             file.open(_Body_path.c_str(), std::ios::app);
             if (!file.is_open())
@@ -343,7 +342,6 @@ Response *Request::execute_request()
     location loc = get_location(get_file_name(), servers[get_server_index()]);
 
     if (loc.getRedirection().size() == 1){
-        cout << "[Redirection]" << endl;
         return create_redirection(loc, *this);
     }
     size_t i;
@@ -356,11 +354,9 @@ Response *Request::execute_request()
 
 
     if (_Method == "POST"){
-        std::cout << "[POST]" << std::endl;
         return post_Response();
     }
     else if (_Method == "DELETE"){
-        std::cout << "[DELETE]" << std::endl;
         delete_Response(this);
         throw 204;
     }

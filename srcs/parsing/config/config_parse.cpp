@@ -151,8 +151,6 @@ double convert_to_byte(std::string str){
         n = n * 1024 * 1024;
     else if (last == 'g' || last == 'G')
         n = n * 1024 * 1024 * 1024;
-    else
-        n = n;
     if (n > std::numeric_limits<long long>::max() || n < std::numeric_limits<long long>::min())
         throw std::runtime_error("Error: client_max_body_size too large");
     return n;

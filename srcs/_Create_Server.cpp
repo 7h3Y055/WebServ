@@ -1,51 +1,6 @@
 #include "webserv.hpp"
 
 
-
-
-// void _Print_req(Request &req)
-// {
-//     std::cout << "Method: " << req.get_method() << std::endl;
-//     std::cout << "URI: " << req.get_URI() << std::endl;
-//     std::cout << "Version: " << req.get_version() << std::endl;
-//     std::cout << "Host: " << req.get_Host() << std::endl;
-//     std::cout << "File name: " << req.get_file_name() << std::endl;
-//     std::cout << "Headers: {" << std::endl;
-//     std::map<std::string, std::string> headers = req.get_headers();
-//     for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++)
-//     {
-//         std::cout << "'" << it->first << "': '" << it->second << "'\n";
-//     }
-//     std::cout << "}" << std::endl;
-//     std::cout << "Content Type: " << req.get_transfer_mechanism() << std::endl;
-//     if (req.get_transfer_mechanism() == "Fixed")
-//         std::cout << "Content Length: " << req.get_fixed_length() << std::endl;
-//     std::cout << "Request State: " << (req.request_state() == 3? "DONE":"NOT DONE") << std::endl;
-//     std::cout << "Body: {";
-//      for (std::vector<char>::iterator it = req.get_body().begin(); it != req.get_body().end(); ++it) {
-//         if (std::isprint(static_cast<unsigned char>(*it))) {
-//             std::cout << *it;
-//         } else {
-//             switch (*it)
-//             {
-//                 case '\n':
-//                     std::cout << "\\n";
-//                     break;
-//                 case '\r':
-//                     std::cout << "\\r";
-//                     break;
-//                 case '\t':
-//                     std::cout << "\\t";
-//                     break;
-//                 default:
-//                     std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << (int)(unsigned char)*it;
-//                     break;
-//             }
-//         }
-//     }
-//     std::cout << "}" << std::endl;
-// }
-
 std::string _to_string(int n)
 {
     std::stringstream ss;
@@ -66,12 +21,17 @@ void _Create_Servers()
         if (host_port_to_fd.find(host_port) == host_port_to_fd.end())
         {
             int fd = socket(AF_INET, SOCK_STREAM, 0);
-            if (fd == -1)
-                throw std::runtime_error("socket failed");
+            if (fd == -1){
+                cerr << "socket failed" << endl;
+                servers[i].setFd(-1);
+                continue;
+            }
             if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
             {
                 close(fd);
-                throw std::runtime_error("setsockopt failed");
+                cerr << "setsockopt failed" << endl;
+                servers[i].setFd(-1);
+                continue;
             }
             struct addrinfo hints, *res;
             std::memset(&hints, 0, sizeof(hints));
@@ -83,19 +43,25 @@ void _Create_Servers()
             if (get_addr != 0)
             {
                 close(fd);
-                throw std::runtime_error("getaddrinfo failed");
+                cerr << "getaddrinfo failed (Bad address)" << endl;
+                servers[i].setFd(-1);
+                continue;
             }
             if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
             {
                 close(fd);
                 freeaddrinfo(res);
-                throw std::runtime_error("bind failed");
+                cerr << "bind failed (Bad port)" << endl;
+                servers[i].setFd(-1);
+                continue;
             }
             freeaddrinfo(res);
             if (listen(fd, SOMAXCONN) == -1)
             {
                 close(fd);
-                throw std::runtime_error("listen failed");
+                cerr << "listen failed" << endl;
+                servers[i].setFd(-1);
+                continue;
             }
             host_port_to_fd[host_port] = fd;
             servers[i].setFd(fd);
@@ -108,45 +74,6 @@ void _Create_Servers()
         }
     }
 }
-
-/*
-
-
-int get_server_index_(string &host, int fd)
-{
-
-    std::cout << "this is the server fd == " << fd << " host == " << host << std::endl;
-    for (size_t i = 0; i < servers.size(); i++)
-    {
-        if (servers[i].getFd() == fd)
-        {
-            for (size_t j = 0; j < servers[i].getServerName().size(); j++)
-            {
-                size_t pos = servers[i].getServerName()[j].find(":");
-                size_t pos2 = host.find(":");
-                if (pos2 != string::npos) // wen have a port
-                {
-                    if (host.substr(pos2 + 1) == _to_string(servers[i].getPort()) &&
-                        servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2))   
-                        {
-                            return i;
-                        }
-                }
-                std::cout << "servers[i].getServerName()[j].substr(0, pos) == " << servers[i].getServerName()[j].substr(0, pos) << std::endl;
-                if (servers[i].getServerName()[j].substr(0, pos) == host.substr(0, pos2)) // wen have just a host
-                {
-                    return i;
-                }
-            }
-            std::cout << "this is the server index == " << i << "fd " << fd << std::endl;
-            return i;
-        }
-    }
-    return 0;
-}
-
-*/
-
 
 std::vector<int> get_servers_same_fd(std::vector<Serv> &servers, int fd)
 {
@@ -189,7 +116,6 @@ int get_server_index_(string &host, int fd)
                     }
                 }
             }
-            std::cout << "this is the server index == " << i << "fd " << fd << std::endl;
             return i;
         }
     }
@@ -208,7 +134,6 @@ void    Client_desconnected(std::map<int, Client *> &clients, int &epoll_fd, int
     if (clients[client_fd]->cgi){ // kill child process
         kill(clients[client_fd]->cgi->get_cgi_child(), SIGKILL);
         waitpid(clients[client_fd]->cgi->get_cgi_child(), NULL, 0);
-        cout << "Kill child process: " << clients[client_fd]->cgi->get_cgi_child() << endl;
     }
     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
     delete clients[client_fd];
@@ -255,6 +180,8 @@ void _Run_Server()
 
     for (size_t i = 0; i < servers.size(); i++)
     {
+        if (servers[i].getFd() == -1)
+            continue;
         event.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP;
         event.data.fd = servers[i].getFd();
         if(std::find(fds.begin(), fds.end(), servers[i].getFd()) == fds.end())
@@ -339,7 +266,6 @@ void _Run_Server()
                             Response *res = create_redirection(loc, clients[client_fd]->req);
                             std::vector<char> response_binary = res->get_response();
                             ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
-                            std::cout << "Redirected successfully" << std::endl;
                             if (ret == -1)
                             {
                                 std::cerr << "Send failed" << std::endl;

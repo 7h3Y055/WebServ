@@ -93,6 +93,7 @@ void	CGI::init(void)
 		setenv("PATH_TRANSLATED", _path.c_str(), 1) |
 		setenv("PATH_INFO", _req.get_file_name().substr(file_path.size()).c_str(), 1) |
 		setenv("SCRIPT_NAME", _path.c_str(), 1) |
+		setenv("CONTENT_TYPE", _req.get_header("Content-Type").c_str(), 1) |
 		setenv("CONTENT_LENGTH", DEL::to_string(_content_length).c_str(), 1) |
 		setenv("QUERY_STRING", _query_string.c_str(), 1)
 	) == -1 ? throw 500 : 0;
