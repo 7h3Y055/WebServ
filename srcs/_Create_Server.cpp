@@ -1,4 +1,4 @@
-#include "../includes/webserv.hpp"
+#include "webserv.hpp"
 
 
 
@@ -399,7 +399,7 @@ void _Run_Server()
                         }
                         else if (clients[client_fd]->req.get_method() == "GET" ) // GET
                         {
-                            std::string resources = clients[client_fd]->req.get_URI();
+                            std::string resources = clients[client_fd]->req.get_file_name();
                             std::string root = loc.getRoot();
                             std::string path = root + resources;
                             if (access(path.c_str(), F_OK) == -1)

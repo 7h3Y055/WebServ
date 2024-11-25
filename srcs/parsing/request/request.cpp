@@ -171,7 +171,7 @@ string get_CGI_script(std::string file_name, size_t index, size_t start_pos){
     for (; file_name[i] == '/'; i++);
     string file = file_name;
     file = file.substr(i);
-    size_t pos2 = file.find_first_of('/', start_pos);
+    size_t pos2 = file.find_first_of('/', start_pos + 1);
 
     size_t pos = file.find_last_of('.', pos2);
     if (pos != std::string::npos){
@@ -394,8 +394,9 @@ long long &Request::get_fixed_length(){
     return this->_Fixed_length;
 }
 
-std::string &Request::get_file_name(){
-    return this->_File_name;
+std::string Request::get_file_name(){
+    location loc = get_location(_File_name, servers[server_index]);
+    return "/" + this->_File_name.substr(loc.getPath().size());
 }
 
 std::string &Request::get_URI(){

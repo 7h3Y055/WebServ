@@ -307,6 +307,7 @@ void add_default_location(Serv &server){
     }
     location loc;
     loc.getPath() = "/";
+    loc.setRoot(server.getRoot());
     loc.getMethods().push_back("GET");
     loc.setDirectoryListing(false);
     server.getLocations().push_back(loc);

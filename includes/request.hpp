@@ -44,7 +44,7 @@ class Request
         RequestState &request_state();
         std::string &get_method();
         std::string &get_version();
-        std::string &get_file_name();
+        std::string get_file_name();
         long long &get_fixed_length();
         std::string &get_Host();
         std::string &get_URI();
