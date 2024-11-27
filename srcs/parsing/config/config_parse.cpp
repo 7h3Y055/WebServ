@@ -111,7 +111,7 @@ void init_location(location &loc, std::vector<string> &strs)
         loc.setRoot(strs[1]);
     }
     else{
-        throw std::runtime_error("Error: invalid location");
+        throw std::runtime_error("Error: invalid location (" + strs[0] + ")");
     }
 }
 
@@ -151,8 +151,6 @@ double convert_to_byte(std::string str){
         n = n * 1024 * 1024;
     else if (last == 'g' || last == 'G')
         n = n * 1024 * 1024 * 1024;
-    else
-        n = n;
     if (n > std::numeric_limits<long long>::max() || n < std::numeric_limits<long long>::min())
         throw std::runtime_error("Error: client_max_body_size too large");
     return n;
@@ -307,6 +305,7 @@ void add_default_location(Serv &server){
     }
     location loc;
     loc.getPath() = "/";
+    loc.setRoot(server.getRoot());
     loc.getMethods().push_back("GET");
     loc.setDirectoryListing(false);
     server.getLocations().push_back(loc);

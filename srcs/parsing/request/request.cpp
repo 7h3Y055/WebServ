@@ -142,11 +142,13 @@ bool is_CGI(std::string file_name, size_t index, size_t start_pos){
     size_t i = start_pos;
 
     for (; file_name[i] == '/'; i++);
+    if (i > file_name.size())
+        return false;
     string file = file_name.substr(i);
     size_t pos2 = file.find_first_of('/', start_pos);
 
     size_t pos = file.find_last_of('.', pos2);
-    if (pos != std::string::npos){
+    if (pos < file.size()){
         string extention = file.substr(pos, pos2 - pos);
         if (loc.getCgi()[extention].size() != 0){
             return true;
@@ -171,7 +173,7 @@ string get_CGI_script(std::string file_name, size_t index, size_t start_pos){
     for (; file_name[i] == '/'; i++);
     string file = file_name;
     file = file.substr(i);
-    size_t pos2 = file.find_first_of('/', start_pos);
+    size_t pos2 = file.find_first_of('/', start_pos + 1);
 
     size_t pos = file.find_last_of('.', pos2);
     if (pos != std::string::npos){
@@ -268,7 +270,6 @@ void    Request::fill_request(std::vector<char> &buf){
             ofstream file;
             if (_Body_path.size() == 0){
                 _Body_path =  generate_random_name();
-                cout << "Create: " << _Body_path << endl;
             }
             file.open(_Body_path.c_str(), std::ios::app);
             if (!file.is_open())
@@ -343,7 +344,6 @@ Response *Request::execute_request()
     location loc = get_location(get_file_name(), servers[get_server_index()]);
 
     if (loc.getRedirection().size() == 1){
-        cout << "[Redirection]" << endl;
         return create_redirection(loc, *this);
     }
     size_t i;
@@ -356,11 +356,9 @@ Response *Request::execute_request()
 
 
     if (_Method == "POST"){
-        std::cout << "[POST]" << std::endl;
         return post_Response();
     }
     else if (_Method == "DELETE"){
-        std::cout << "[DELETE]" << std::endl;
         delete_Response(this);
         throw 204;
     }
@@ -394,7 +392,7 @@ long long &Request::get_fixed_length(){
     return this->_Fixed_length;
 }
 
-std::string &Request::get_file_name(){
+std::string Request::get_file_name(){
     return this->_File_name;
 }
 

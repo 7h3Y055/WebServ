@@ -42,7 +42,7 @@
 #include "delete.hpp"
 
 #define SEND_BUFFER_SIZE 2048
-#define TIMEOUT 2
+#define TIMEOUT 30
 #define ERROR_FILE "logs/error.log"
 
 

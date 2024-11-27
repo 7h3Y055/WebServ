@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>HTTP Message Body Transfer Mechanisms</title>
+   <style>
+      body {
+         font-family: Arial, sans-serif;
+         line-height: 1.6;
+         margin: 20px;
+         background-color: #121212;
+         color: #e0e0e0;
+      }
+      h1, h2, h3, h4 {
+         color: #ffffff;
+      }
+      pre {
+         background-color: #333333;
+         padding: 10px;
+         border: 1px solid #444444;
+         overflow-x: auto;
+         color: #e0e0e0;
+      }
+      code {
+         background-color: #333333;
+         padding: 2px 4px;
+         border-radius: 4px;
+         color: #e0e0e0;
+      }
+      ul {
+         list-style-type: disc;
+         margin-left: 20px;
+      }
+      table {
+         width: 100%;
+         border-collapse: collapse;
+         margin: 20px 0;
+         color: #e0e0e0;
+      }
+      table, th, td {
+         border: 1px solid #444444;
+      }
+      th, td {
+         padding: 8px;
+         text-align: left;
+      }
+      th {
+         background-color: #333333;
+      }
+   </style>
+</head>
+<body>
+   <h1 id="http-message-body-transfer-mechanisms">HTTP Message Body Transfer Mechanisms</h1>
+   <p>There are three main mechanisms for transferring HTTP message bodies:</p>
+   
+   <h2 id="1-fixed-length-transfer">1. Fixed-length Transfer</h2>
+   <p>Uses <code>Content-Length</code> header to specify exact message size.</p>
+   <h3 id="example">Example</h3>
+   <pre><code class="lang-http">HTTP/1.1 200 OK
+Content-Length: 11
+Hello World
+   </code></pre>
+   
+   <h2 id="2-chunked-transfer">2. Chunked Transfer</h2>
+   <p>Uses <code>Transfer-Encoding: chunked</code> to send data in chunks (the length in hex).</p>
+   <h3 id="example">Example</h3>
+   <pre><code class="lang-http">HTTP/1.1 200 OK
+Transfer-Encoding: chunked
+5
+Hello
+7
+ World
+0
+   </code></pre>
+   
+   <h2 id="3-multiparts-boundaries">3. Multiparts (boundaries)</h2>
+   <p>But it is not mandatory.</p>
+   <h3 id="rfc">RFC:</h3>
+   <h4 id="section-4-request-methods">Section 4: Request Methods</h4>
+   <table>
+      <thead>
+         <tr>
+            <th>Method</th>
+            <th>Description</th>
+            <th>Sec.</th>
+         </tr>
+      </thead>
+      <tbody>
+         <tr>
+            <td>GET</td>
+            <td>Transfer a current representation of the target resource.</td>
+            <td>4.3.1</td>
+         </tr>
+         <tr>
+            <td>POST</td>
+            <td>Perform resource-specific processing on the request payload.</td>
+            <td>4.3.3</td>
+         </tr>
+         <tr>
+            <td>DELETE</td>
+            <td>Remove all current representations of the target resource.</td>
+            <td>4.3.5</td>
+         </tr>
+      </tbody>
+   </table>
+   
+   <h3 id="get">GET</h3>
+   <p>The GET method requests the current representation of a specified resource. It's primarily used for data retrieval and heavily optimized for performance. Although often thought of as fetching a file from a path, GET can serve dynamic content from databases, programs, or external systems. Only the server understands the resource mapping, and it may generate content dynamically rather than directly serving files.</p>
+   <ul>
+      <li>Key points:
+         <ul>
+            <li>Sending a body with GET has no defined meaning and may cause errors.</li>
+         </ul>
+      </li>
+   </ul>
+   
+   <h3 id="post">POST</h3>
+   <p>The POST method requests the server to process the enclosed data based on its specific logic. It is versatile and used for tasks like submitting forms, posting messages, creating new resources, or appending data.</p>
+   <ul>
+      <li>Key points:
+         <ul>
+            <li>The server processes the request and responds with an appropriate status code.</li>
+            <li>If a new resource is created, the server responds with 201 Created and includes a Location header pointing to the new resource.</li>
+         </ul>
+      </li>
+   </ul>
+   
+   <h3 id="delete">DELETE</h3>
+   <p>The DELETE method requests the server to remove the association between a resource and its functionality, effectively "deleting" it. However, actual deletion of data depends on the server's implementation.</p>
+   <ul>
+      <li>Key points:
+         <ul>
+            <li>DELETE affects the URI mapping, not necessarily the underlying data.</li>
+            <li>Commonly used in remote authoring or resource management (e.g., undoing actions from PUT or POST).</li>
+            <li>Typical response: 204 No Content: Action completed without additional information.</li>
+            <li>DELETE payloads are undefined and may cause issues with some implementations.</li>
+         </ul>
+      </li>
+   </ul>
+</body>
+</html>

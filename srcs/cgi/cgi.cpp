@@ -73,7 +73,7 @@ void	CGI::init(void)
 	_path = _loc.getRoot() + get_CGI_script(file_path, _req.get_server_index(), 0);
 	if (access(_path.c_str(), F_OK) == -1)
 		throw 404;
-	_filename = get_CGI_script(file_path, _req.get_server_index(), 0).c_str();
+	_filename = file_path;
 	_cgi_path = _loc.getCgi().at(_filename.substr(_filename.find_last_of('.')));
 	_content_length = _req.get_fixed_length();
 	string _query_string = _req.get_URI().substr((_req.get_URI().find('?' ) == string::npos ? _req.get_URI().size() : _req.get_URI().find('?')));
@@ -93,6 +93,7 @@ void	CGI::init(void)
 		setenv("PATH_TRANSLATED", _path.c_str(), 1) |
 		setenv("PATH_INFO", _req.get_file_name().substr(file_path.size()).c_str(), 1) |
 		setenv("SCRIPT_NAME", _path.c_str(), 1) |
+		setenv("CONTENT_TYPE", _req.get_header("Content-Type").c_str(), 1) |
 		setenv("CONTENT_LENGTH", DEL::to_string(_content_length).c_str(), 1) |
 		setenv("QUERY_STRING", _query_string.c_str(), 1)
 	) == -1 ? throw 500 : 0;
