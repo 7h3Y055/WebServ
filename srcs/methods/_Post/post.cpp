@@ -33,7 +33,7 @@ std::string generate_random_name()
     std::string base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
 
     while (true){
-        name = "/tmp/webserv_"; // HERE
+        name = "/tmp/";
         for (size_t n = 0; n < 64; n++)
             name += base[my_rand() % base.size()];
         if (access(name.c_str(), F_OK) == -1){

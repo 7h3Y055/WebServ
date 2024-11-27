@@ -39,7 +39,7 @@ class Client
             cig_start_time = 0;
             _fd = fd;
             _address = address;
-            // _ip = inet_ntoa(address.sin_addr);
+            _ip = inet_ntoa(address.sin_addr);
             _port = ntohs(address.sin_port);
             _read_pos = 0;
             _last_read = time(NULL);

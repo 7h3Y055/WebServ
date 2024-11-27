@@ -12,7 +12,7 @@ int main(int ac, char **av)
     }
     catch (std::exception &e)
     {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "\033[1;36m[WebServ]\033[0m " << e.what() << std::endl;
     }
     return 0;
 }

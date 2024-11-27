@@ -73,7 +73,7 @@ void	CGI::init(void)
 	_path = _loc.getRoot() + get_CGI_script(file_path, _req.get_server_index(), 0);
 	if (access(_path.c_str(), F_OK) == -1)
 		throw 404;
-	_filename = get_CGI_script(file_path, _req.get_server_index(), 0).c_str();
+	_filename = file_path;
 	_cgi_path = _loc.getCgi().at(_filename.substr(_filename.find_last_of('.')));
 	_content_length = _req.get_fixed_length();
 	string _query_string = _req.get_URI().substr((_req.get_URI().find('?' ) == string::npos ? _req.get_URI().size() : _req.get_URI().find('?')));

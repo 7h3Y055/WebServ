@@ -94,7 +94,7 @@ std::vector<std::string> get_directory_content(std::string path)
     }
     else
     {
-        std::cout << "could not open directory" << std::endl;
+        std::cout << "\033[1;36m[WebServ]\033[0m " << "could not open directory" << std::endl;
         throw 403;
     }
     return directory_content;

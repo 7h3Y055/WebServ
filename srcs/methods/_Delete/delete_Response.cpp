@@ -4,7 +4,7 @@ void	delete_Response(Request *req)
 {
 	string source = servers[req->get_server_index()].getRoot() + req->get_file_name();
 
-	cout << "source: " << source << endl;
+	cout << "\033[1;36m[WebServ]\033[0m " << "source: " << source << endl;
 	if (access(source.c_str(), F_OK) == -1)
 	{
 		if (errno == EACCES)

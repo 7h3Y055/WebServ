@@ -111,7 +111,7 @@ void init_location(location &loc, std::vector<string> &strs)
         loc.setRoot(strs[1]);
     }
     else{
-        throw std::runtime_error("Error: invalid location");
+        throw std::runtime_error("Error: invalid location (" + strs[0] + ")");
     }
 }
 

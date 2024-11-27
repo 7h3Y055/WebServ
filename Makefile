@@ -19,11 +19,11 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
-	@echo "\033[0;32m[webserv] Compiled\033[0m"
+	@echo "\033[0;32m\033[1;36m[WebServ]\033[0m Compiled\033[0m"
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
-	@echo "\033[0;33m[webserv] Compiling \033[0m" $<
+	@echo "\033[0;33m\033[1;36m[WebServ]\033[0m Compiling \033[0m" $<
 
 clean:
 	@rm -f $(OBJ)
