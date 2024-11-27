@@ -27,11 +27,11 @@ To install and build the WebServ project, follow these steps:
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/yourusername/webserv.git
+   git clone https://github.com/7h3Y055/WebServ.git
    ```
 2. Navigate to the project directory:
    ```sh
-   cd webserv
+   cd WebServ
    ```
 3. Build the project:
    ```sh
