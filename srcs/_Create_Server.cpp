@@ -22,14 +22,14 @@ void _Create_Servers()
         {
             int fd = socket(AF_INET, SOCK_STREAM, 0);
             if (fd == -1){
-                cerr << "\033[1;36m[WebServ]\033[0m " << "socket failed" << endl;
+                // cerr << "\033[1;36m[WebServ]\033[0m " << "socket failed" << endl;
                 servers[i].setFd(-1);
                 continue;
             }
             if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
             {
                 close(fd);
-                cerr << "\033[1;36m[WebServ]\033[0m " << "setsockopt failed" << endl;
+                // cerr << "\033[1;36m[WebServ]\033[0m " << "setsockopt failed" << endl;
                 servers[i].setFd(-1);
                 continue;
             }
@@ -59,7 +59,7 @@ void _Create_Servers()
             if (listen(fd, SOMAXCONN) == -1)
             {
                 close(fd);
-                cerr << "\033[1;36m[WebServ]\033[0m " << "listen failed" << endl;
+                // cerr << "\033[1;36m[WebServ]\033[0m " << "listen failed" << endl;
                 servers[i].setFd(-1);
                 continue;
             }
@@ -126,7 +126,7 @@ void    Client_desconnected(std::map<int, Client *> &clients, int &epoll_fd, int
 {
     if (clients[client_fd] == NULL)
         return;
-    cout << "\033[1;36m[WebServ]\033[0m " << "⬅ Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
+    // cout << "\033[1;36m[WebServ]\033[0m " << "⬅ Client disconnected: " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
     if (clients[client_fd]->get_req().get_body_path().size() != 0){
         remove(clients[client_fd]->get_req().get_body_path().c_str());
     }
@@ -148,7 +148,7 @@ void _Check_for_timeout(std::map<int, Client *> &clients, int &epoll_fd)
     {
         if ( it->second && current_time - it->second->get_last_read() > TIMEOUT)
         {
-            std::cout << "\033[1;36m[WebServ]\033[0m " << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
+            // std::cout << "\033[1;36m[WebServ]\033[0m " << "Client timed out: " << it->second->get_ip() << ":" << it->second->get_port() << std::endl;
             if (it->second->get_req().get_body_path().size() != 0){
                 remove(it->second->get_req().get_body_path().c_str());
             }
@@ -188,8 +188,8 @@ void _Run_Server()
         if(std::find(fds.begin(), fds.end(), servers[i].getFd()) == fds.end())
         {
             fds.push_back(servers[i].getFd());
-            if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, servers[i].getFd(), &event) == -1)
-                std::cerr << "\033[1;36m[WebServ]\033[0m " << "epoll_ctl failed: " << strerror(errno) << std::endl;
+            epoll_ctl(epoll_fd, EPOLL_CTL_ADD, servers[i].getFd(), &event);
+                // std::cerr << "\033[1;36m[WebServ]\033[0m " << "epoll_ctl failed: " << strerror(errno) << std::endl;
         }
     }
     if (!g_server)
@@ -213,7 +213,7 @@ void _Run_Server()
                     int client_fd = accept(events[i].data.fd, (struct sockaddr *)&addr, &addr_len);
                     if (client_fd == -1)
                     {
-                        std::cerr << "\033[1;36m[WebServ]\033[0m " << "accept failed: " << strerror(errno) << std::endl;
+                        // std::cerr << "\033[1;36m[WebServ]\033[0m " << "accept failed: " << strerror(errno) << std::endl;
                         continue;
                     }
                     Client *client = new Client(client_fd, addr, -1);
@@ -230,7 +230,7 @@ void _Run_Server()
                     }
                     clients[client_fd] = client;
                     clients[client_fd]->req._fd = events[i].data.fd;
-                    std::cout << "\033[1;36m[WebServ]\033[0m " << "➡ New connection from " << client->get_ip() << ":" << client->get_port() << std::endl;
+                    // std::cout << "\033[1;36m[WebServ]\033[0m " << "➡ New connection from " << client->get_ip() << ":" << client->get_port() << std::endl;
                 }
             }
             else
@@ -264,14 +264,14 @@ void _Run_Server()
                         string file_path = get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0);
                         location loc = get_location(file_path, servers[clients[client_fd]->req.get_server_index()]);
 
-
+                        cout << "\033[1;36m[WebServ]\033[0m " << "Request: " << clients[client_fd]->req.get_method() << " " << clients[client_fd]->req.get_file_name() << " from " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
                         string pth = loc.getRoot() + file_path;
                         for (size_t i = 0; i < loc.getIndex().size(); i++)
                         {
                             std::string index_path = pth + "/" + loc.getIndex()[i];
                             if (access(index_path.c_str(), F_OK) == 0)
                             {
-                                file_path = file_path + "/" + loc.getIndex()[i];
+                                file_path = file_path + loc.getIndex()[i];
                                 break;
                             }
                         }
@@ -286,7 +286,7 @@ void _Run_Server()
                             ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
                             if (ret == -1)
                             {
-                                std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
+                                // std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
                             }
                             Client_desconnected(clients, epoll_fd, client_fd);
                             continue;
@@ -370,7 +370,7 @@ void _Run_Server()
                                     ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
                                     if (ret == -1)
                                     {
-                                        std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
+                                        // std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
                                     }
                                     delete res;
                                     Client_desconnected(clients, epoll_fd, client_fd);
@@ -405,7 +405,7 @@ void _Run_Server()
                                 ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
                                 if (ret == -1)
                                 {
-                                    std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
+                                    // std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
                                 }
                                 delete res;
                                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
@@ -480,7 +480,7 @@ void _Run_Server()
                             ssize_t ret = send(client_fd, &(*response_binary.begin()), response_binary.size(), MSG_NOSIGNAL);
                             if (ret == -1)
                             {
-                                std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
+                                // std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
                                 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                                 delete clients[client_fd];
                                 clients.erase(client_fd);
@@ -497,12 +497,12 @@ void _Run_Server()
                 }
                 catch(const int &code)
                 {
-                    std::cerr << "\033[1;36m[WebServ]\033[0m " << "  HTTP code: " << code << " " << get_error_message(code) << '\n';
+                    // std::cerr << "\033[1;36m[WebServ]\033[0m " << "  HTTP code: " << code << " " << get_error_message(code) << '\n';
                     Response *res = createResponse(code, &clients[client_fd]->req);
                     ssize_t ret = send(client_fd, &(*res->get_response().begin()), res->get_response().size(), 0);
                     if (ret == -1)
                     {
-                        std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
+                        // std::cerr << "\033[1;36m[WebServ]\033[0m " << "Send failed" << std::endl;
                     }
                     delete res;
                     Client_desconnected(clients, epoll_fd, client_fd);
