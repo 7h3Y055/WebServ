@@ -10,7 +10,6 @@ This project is part of the 42 (1337) school curriculum. The goal is to create a
 - [Configuration](#configuration)
 - [Testing](#testing)
 - [Contributing](#contributing)
-- [License](#license)
 
 ## Introduction
 WebServ is a lightweight HTTP server built from scratch in C++. It is designed to handle basic HTTP requests and serve static files. This project aims to deepen understanding of network programming, HTTP protocol, and server-client architecture.
