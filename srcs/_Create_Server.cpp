@@ -200,7 +200,7 @@ void _Run_Server()
     {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 1000);
         if (num_events == -1){
-            cerr << "\033[1;36m[WebServ]\033[0m " << "epoll_wait failed" << endl;
+            // cerr << "\033[1;36m[WebServ]\033[0m " << "epoll_wait failed" << endl;
             continue;
         }
         _Check_for_timeout(clients, epoll_fd);
@@ -225,7 +225,7 @@ void _Run_Server()
                     {
                         delete client;
                         close(client_fd);
-                        cerr << "\033[1;36m[WebServ]\033[0m " << "epoll_ctl failed" << endl;
+                        // cerr << "\033[1;36m[WebServ]\033[0m " << "epoll_ctl failed" << endl;
                         continue;
                     }
                     clients[client_fd] = client;
@@ -264,7 +264,7 @@ void _Run_Server()
                         string file_path = get_CGI_script(clients[client_fd]->req.get_file_name(), clients[client_fd]->req.get_server_index(), 0);
                         location loc = get_location(file_path, servers[clients[client_fd]->req.get_server_index()]);
 
-                        cout << "\033[1;36m[WebServ]\033[0m " << "Request: " << clients[client_fd]->req.get_method() << " " << clients[client_fd]->req.get_file_name() << " from " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
+                        cout << "\033[1;36m[WebServ]\033[0m " << "\033[1;32mServer " << clients[client_fd]->req.get_server_index() + 1 << " \033[0mRequest: " << clients[client_fd]->req.get_method() << " " << clients[client_fd]->req.get_file_name() << " from " << clients[client_fd]->get_ip() << ":" << clients[client_fd]->get_port() << endl;
                         string pth = loc.getRoot() + file_path;
                         for (size_t i = 0; i < loc.getIndex().size(); i++)
                         {
