@@ -1,79 +1,80 @@
+# WebServ Project
+
+This project is part of the 42 (1337) school curriculum. The goal is to create a simple HTTP web server in C++ that is compliant with a subset of the HTTP/1.1 protocol.
+
+## Table of Contents
+- [Introduction](#introduction)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Introduction
+WebServ is a lightweight HTTP server built from scratch in C++. It is designed to handle basic HTTP requests and serve static files. This project aims to deepen understanding of network programming, HTTP protocol, and server-client architecture.
+
+## Features
+- HTTP/1.1 compliance
+- GET, POST, and DELETE request handling
+- Static file serving
+- Basic CGI support
+- Configurable through a configuration file
+
+## Installation
+To install and build the WebServ project, follow these steps:
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/yourusername/webserv.git
+   ```
+2. Navigate to the project directory:
+   ```sh
+   cd webserv
+   ```
+3. Build the project:
+   ```sh
+   make
+   ```
+
+## Usage
+To start the server, run the following command:
+```sh
+./webserv [configuration_file]
+```
+If no configuration file is provided, the server will use the default settings.
+
+## Configuration
+The server can be configured using a configuration file. Below is an example configuration:
+```conf
+SERVER{
+	
+    port = 8080
+    host=127.0.0.1
+    server_names=webserv
+    root=./www
+    error_page=404 error_pages/404.html
+    client_max_body_size=   10G
 
 
-# HTTP Message Body Transfer Mechanisms
+    location / {
+        root=./www/cgi-bin/
+        index=README.html
+    }
 
-There are tree main mechanisms for transferring HTTP message bodies:
+    location /cgi-bin {
+        methods=GET, POST, DELETE
+        directory_listing=ON
+        cgi=.py: /usr/bin/python3
+    }
 
-## 1. Fixed-length Transfer
-
-Uses `Content-Length` header to specify exact message size.
-
-### Example
-```http
-HTTP/1.1 200 OK
-Content-Length: 11
-Hello World
+}SERVER
 ```
 
+## Testing
+To test the server, you can use tools like `curl` or `Postman` to send HTTP requests and verify the responses. Additionally, you can open a web browser and navigate to `http://localhost:8080` to see the server in action.
 
-
-## 2. Chunked Transfer
-Uses "Transfer-Encoding: chunked" to send data in chunks (the length in hex).
-### Example
-```HTTP/1.1 200 OK
-Transfer-Encoding: chunked
-5
-Hello
-7
- World
-0
-```
-## 3. Multiparts(boundaries)
-But not is mandatory
-
-
-# RFC:
-
-## Section 4:  Request Methods
-```
-   +---------+-------------------------------------------------+-------+
-   | Method  | Description                                     | Sec.  |
-   +---------+-------------------------------------------------+-------+
-   | GET     | Transfer a current representation of the target | 4.3.1 |
-   |         | resource.                                       |       |
-   | POST    | Perform resource-specific processing on the     | 4.3.3 |
-   |         | request payload.                                |       |
-   | DELETE  | Remove all current representations of the       | 4.3.5 |
-   |         | target resource.                                |       |
-   +---------+-------------------------------------------------+-------+
-```
-
-### GET
-
-   The GET method requests the current representation of a specified resource. It's primarily used for data retrieval and heavily optimized for performance. Although often thought of as fetching a file from a path, GET can serve dynamic content from databases, programs, or external systems. Only the server understands the resource mapping, and it may generate content dynamically rather than directly serving files.
-
-   - Key points:
-
-      1) Sending a body with GET has no defined meaning and may cause errors.
-
-### POST
-   The POST method requests the server to process the enclosed data based on its specific logic. It is versatile and used for tasks like submitting forms, posting messages, creating new resources, or appending data.
-
-   - Key points:
-
-      1) The server processes the request and responds with an appropriate status code.
-      2) If a new resource is created, the server responds with 201 Created and includes a Location header pointing to the new resource.
-
-
-### DELETE
-   The DELETE method requests the server to remove the association between a resource and its functionality, effectively "deleting" it. However, actual deletion of data depends on the server's implementation.
-
-   - Key points:
-
-      1) DELETE affects the URI mapping, not necessarily the underlying data.
-      2) Commonly used in remote authoring or resource management (e.g., undoing actions from PUT or POST).
-      3) Typical response: 204 No Content: Action completed without additional information.
-      4) DELETE payloads are undefined and may cause issues with some implementations.
-
-
+## Contributing
+Contributions are welcome! Please fork the repository and submit a pull request with your changes. Make sure to follow the coding standards and include tests for any new features or bug fixes.
 
